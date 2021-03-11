@@ -1,0 +1,9 @@
+#main {
+  font-family: 'Roboto Mono';
+  text-align: center;
+  margin-top: 5%;
+}
+
+#main:focus {
+  outline: none
+}
