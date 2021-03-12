@@ -1,0 +1,31 @@
+{
+  "name": "chess-webgl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XL3/chess-webgl.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/XL3/chess-webgl/issues"
+  },
+  "homepage": "https://github.com/XL3/chess-webgl#readme",
+  "devDependencies": {
+    "glslify-bundle": "^5.1.1",
+    "glslify-deps": "^1.3.2",
+    "parcel-bundler": "^1.12.3"
+  },
+  "dependencies": {
+    "src": "^1.1.2"
+  },
+  "browserslist": [
+    "last 1 Chrome versions"
+  ]
+}

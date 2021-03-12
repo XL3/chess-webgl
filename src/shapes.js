@@ -1,4 +1,4 @@
-const Square = (gl, shader_program) => {
+exports.Square = (gl, shader_program) => {
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
 

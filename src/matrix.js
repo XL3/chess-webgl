@@ -1,4 +1,4 @@
-const orthographic = (aspect_ratio, near = 0, far = 100) => {
+exports.orthographic = (aspect_ratio, near = 0, far = 100) => {
   let left = -1;
   let right = 1;
   let bottom = -1;
@@ -20,9 +20,10 @@ const orthographic = (aspect_ratio, near = 0, far = 100) => {
   ]);
 };
 
-const rotation = (theta, axis = 2) => {
+exports.rotation = (theta, axis = 2) => {
   let c = Math.cos(theta);
   let s = Math.sin(theta);
+
   // Rotation matrix
   if (axis == 2) {
     return new Float32Array([
@@ -34,7 +35,7 @@ const rotation = (theta, axis = 2) => {
   }
 };
 
-const identity = () => new Float32Array([
+exports.identity = () => new Float32Array([
   1, 0, 0, 0,
   0, 1, 0, 0,
   0, 0, 0, 0,

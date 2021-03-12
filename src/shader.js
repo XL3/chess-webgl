@@ -1,8 +1,6 @@
-load_shader = async (gl, type, source) => {
-  const shader_source = await (await fetch(source)).text();
-
+compile_shader = async (gl, type, source) => {
   const shader = gl.createShader(type);
-  gl.shaderSource(shader, shader_source);
+  gl.shaderSource(shader, source);
   gl.compileShader(shader);
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -15,9 +13,9 @@ load_shader = async (gl, type, source) => {
 
 };
 
-init_shader = async (gl, vss, fss) => {
-  const vertex_shader = await load_shader(gl, gl.VERTEX_SHADER, vss);
-  const fragment_shader = await load_shader(gl, gl.FRAGMENT_SHADER, fss);
+exports.create_shader_program = async (gl, vss, fss) => {
+  const vertex_shader = await compile_shader(gl, gl.VERTEX_SHADER, vss);
+  const fragment_shader = await compile_shader(gl, gl.FRAGMENT_SHADER, fss);
 
   const shader_program = gl.createProgram();
   gl.attachShader(shader_program, vertex_shader);
@@ -30,4 +28,11 @@ init_shader = async (gl, vss, fss) => {
   }
 
   return shader_program;
+};
+
+exports.shaders = {
+  color: {
+    vertex: require('/shaders/color.vert'),
+    fragment: require('/shaders/color.frag'),
+  }
 };
