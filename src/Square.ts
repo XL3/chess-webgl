@@ -23,6 +23,22 @@ export default class Square {
     gl.enableVertexAttribArray(position.location);
     gl.vertexAttribPointer(position.location, 2, gl.FLOAT, false, 0, 0);
 
+    const texture_uv = {
+      location: gl.getAttribLocation(shader_program, 'texture_uv'),
+      buffer: gl.createBuffer(),
+      data: new Uint32Array([
+        0, 1,
+        1, 1,
+        1, 0,
+        0, 0
+      ]),
+    };
+    gl.bindBuffer(gl.ARRAY_BUFFER, texture_uv.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, texture_uv.data, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(texture_uv.location);
+    gl.vertexAttribPointer(texture_uv.location, 2, gl.UNSIGNED_INT, false, 0, 0);
+
+
     const elements = {
       buffer: gl.createBuffer(),
       data: new Int32Array([

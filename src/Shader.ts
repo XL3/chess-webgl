@@ -32,9 +32,9 @@ class Shader {
 };
 
 const shaders = {
-  color: {
-    vertex: require('/shaders/color.vert'),
-    fragment: require('/shaders/color.frag'),
+  texture: {
+    vertex: require('/shaders/texture.vert'),
+    fragment: require('/shaders/texture.frag'),
   }
 };
 

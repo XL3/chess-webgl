@@ -1,3 +1,7 @@
+html {
+  background-color: rgb(253, 243, 229);
+}
+
 #main {
   font-family: 'Roboto Mono';
   text-align: center;
@@ -6,4 +10,19 @@
 
 #main:focus {
   outline: none
+}
+
+#title-div {
+  margin-bottom: 4em;
+}
+
+#canvas-div {
+  width: 60%;
+  float: left;
+}
+
+#changelog-div {
+  width: 40%;
+  float: right;
+  text-align: left !important;
 }

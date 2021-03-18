@@ -1,24 +1,11 @@
 import Matrix from "./Matrix"
 import { Shader, shaders } from "./Shader";
 import Square from "./Square";
-
-declare global {
-  interface Window {
-    rotating: boolean;
-  }
-}
+import Texture from "./Texture";
 
 const init = async () => {
   // Create canvas and add event handler
   const main = document.querySelector('#main');
-  window.rotating = false;
-  main.addEventListener('keydown', (e) => {
-    let kbevt = <KeyboardEvent>e;
-    if (kbevt.key == 'r') {
-      window.rotating = !window.rotating
-    }
-  });
-
   const glCanvas: HTMLCanvasElement = main.querySelector('#glCanvas');
   glCanvas.width = 900;
   glCanvas.height = 600;
@@ -37,14 +24,14 @@ const init = async () => {
   if (!gl) return null;
 
   // Create shader program
-  const shader_program = await Shader.createProgram(gl, shaders.color);
+  const shader_program = await Shader.createProgram(gl, shaders.texture);
   if (!shader_program) return null;
-
 
   // Send uniforms
   gl.useProgram(shader_program);
   const uniforms = {
     projection: gl.getUniformLocation(shader_program, 'projection'),
+    texture_sampler: gl.getUniformLocation(shader_program, 'texture_sampler'),
     model: gl.getUniformLocation(shader_program, 'model'),
     view: gl.getUniformLocation(shader_program, 'view'),
     time: gl.getUniformLocation(shader_program, 'time'),
@@ -58,9 +45,20 @@ const init = async () => {
   return { gl, shader_program, uniforms };
 }
 
+const load_image = async (path: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+  const image = new Image();
+  image.src = path;
+  image.onload = () => resolve(image);
+  image.onerror = () => reject(new Error('Failed to load image'));
+});
+
+
 window.onload = async () => {
   const { gl, shader_program, uniforms } = await init();
   const square = new Square(gl, shader_program);
+  const board_img = await load_image(require('/assets/board.png'));
+  const board = new Texture(gl, board_img);
+  board.bind(gl, 0, uniforms.texture_sampler);
 
   let time = 0;
   let last_update = Date.now();
@@ -69,8 +67,8 @@ window.onload = async () => {
     dt = Date.now() - last_update;
     last_update = Date.now();
 
-    if (window.rotating) time += dt / 1000;
-    let model = Matrix.rotation(time, 2);
+    time += dt / 1000;
+    let model = Matrix.identity;
 
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
