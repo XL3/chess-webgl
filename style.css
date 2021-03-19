@@ -16,13 +16,19 @@ html {
   margin-bottom: 4em;
 }
 
-#canvas-div {
-  width: 60%;
-  float: left;
+.div-container {
+  margin-left: 10%;
+  margin-right: 10%;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+}
+
+.div-container > div {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #changelog-div {
-  width: 40%;
-  float: right;
   text-align: left !important;
 }

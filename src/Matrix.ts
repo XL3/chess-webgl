@@ -2,9 +2,15 @@ export default class Matrix {
   static identity: Float32Array = new Float32Array([
     1, 0, 0, 0,
     0, 1, 0, 0,
-    0, 0, 0, 0,
+    0, 0, 1, 0,
     0, 0, 0, 1,
   ]);
+
+  static scale(factor: number) {
+    const scaled = this.identity.map((x: number) => factor * x);
+    scaled[15] = 1;
+    return scaled;
+  }
 
   static orthographic(aspect_ratio: number, near: number = 0, far: number = 100): Float32Array {
     let left = -1;

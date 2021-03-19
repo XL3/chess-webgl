@@ -7,8 +7,8 @@ const init = async () => {
   // Create canvas and add event handler
   const main = document.querySelector('#main');
   const glCanvas: HTMLCanvasElement = main.querySelector('#glCanvas');
-  glCanvas.width = 900;
-  glCanvas.height = 600;
+  glCanvas.width = 640;
+  glCanvas.height = 640;
   const aspect_ratio = glCanvas.width / glCanvas.height;
 
   // Request WebGL context
@@ -39,7 +39,7 @@ const init = async () => {
 
   const projection = Matrix.orthographic(aspect_ratio);
   gl.uniformMatrix4fv(uniforms.projection, true, projection);
-  const view = Matrix.identity;
+  const view = Matrix.scale(2);
   gl.uniformMatrix4fv(uniforms.view, true, view);
 
   return { gl, shader_program, uniforms };
