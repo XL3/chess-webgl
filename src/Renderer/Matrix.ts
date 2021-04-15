@@ -8,6 +8,7 @@ export default class Matrix {
 
   static scale(factor: number) {
     const scaled = this.identity.map((x: number) => factor * x);
+    scaled[3] = scaled[7] = scaled[11] = 0;
     scaled[15] = 1;
     return scaled;
   }
@@ -34,7 +35,14 @@ export default class Matrix {
     ]);
   }
 
-  static rotation(theta: number, axis: number = 3): Float32Array {
+  static translate(t: { x: number, y: number }, matrix: Float32Array = Matrix.identity): Float32Array {
+    let translated = matrix;
+    translated[3] = t.x;
+    translated[7] = t.y;
+    return translated;
+  }
+
+  static rotate(theta: number, axis: number = 3): Float32Array {
     let c = Math.cos(theta);
     let s = Math.sin(theta);
 

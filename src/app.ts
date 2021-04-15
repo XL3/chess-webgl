@@ -5,8 +5,7 @@ window.onload = async () => {
   const main = document.querySelector('#main');
   const glCanvas: HTMLCanvasElement = main.querySelector('#glCanvas');
   glCanvas.width = 640;
-  glCanvas.height = 640;
-  const aspect_ratio = glCanvas.width / glCanvas.height;
+  glCanvas.height = glCanvas.width
 
   // Request WebGL context
   const gl = glCanvas.getContext("webgl2", {
@@ -20,6 +19,6 @@ window.onload = async () => {
   });
   if (!gl) return null;
 
-  const renderer = new Renderer(gl, aspect_ratio);
+  const renderer = new Renderer(gl, glCanvas.width);
   await renderer.init();
 }

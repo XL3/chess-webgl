@@ -1,4 +1,4 @@
-html {
+body {
   background-color: rgb(253, 243, 229);
 }
 
@@ -31,4 +31,10 @@ html {
 
 #changelog-div {
   text-align: left !important;
+}
+
+img.piece {
+  width: 80px !important;
+  height: 80px !important;
+  object-fit: none !important;
 }

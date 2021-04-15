@@ -1,10 +1,18 @@
 import { Shader, shaders } from "./Shader";
-import Square from "./Square";
-import Texture from "./Texture";
-import Matrix from "./Matrix"
+import Mesh_Square from "./Mesh_Square";
+import { Texture, Texture_Image } from "./Texture";
+import Matrix from "./Matrix";
+
+import {
+  Square,
+  Type,
+  Color,
+  Piece,
+  King,
+} from "../Chess/Piece";
 
 export default class Renderer {
-  aspect_ratio: number;
+  BOARD_SIZE: number;
 
   gl: WebGL2RenderingContext;
   shader_program: WebGLShader;
@@ -17,25 +25,31 @@ export default class Renderer {
     time: WebGLUniformLocation,
   }
 
+  matrices: {
+    model: Float32Array;
+    view: Float32Array;
+    projection: Float32Array;
+  }
+
   last_update: number;
   time_elapsed: number;
   dt: number;
 
-  square: Square;
+  square: Mesh_Square;
   textures: {
     board: Texture
     pieces?: Texture[][];
   };
 
-  constructor(gl: WebGL2RenderingContext, aspect_ratio: number = 1) {
+  constructor(gl: WebGL2RenderingContext, board_size: number = 1) {
     this.gl = gl;
-    this.aspect_ratio = aspect_ratio;
+    this.BOARD_SIZE = board_size;
     this.dt = this.time_elapsed = this.last_update = 0;
   }
 
   async init() {
-    // Init shaders
-    this.shader_program = await Shader.createProgram(this.gl, shaders.texture);
+    // Initialize shaders
+    this.shader_program = await Shader.create_program(this.gl, shaders.texture);
     if (!this.shader_program) {
       throw new Error('Failed to create shader program');
     } else {
@@ -52,37 +66,80 @@ export default class Renderer {
     }
 
     // Create textures and meshes
-    // @ts-ignore
-    const board_url = require('/assets/board.png');
-    const board_img = await this.load_image(board_url);
+    this.square = new Mesh_Square(this.gl, this.shader_program);
+    await this.load_textures();
 
-    this.square = new Square(this.gl, this.shader_program);
-    this.textures = { board: new Texture(this.gl, board_img) }
-
-
-    // Send uniforms
-    const model = Matrix.identity;
-    this.gl.uniformMatrix4fv(this.uniforms.model, true, model);
-    const view = Matrix.scale(2);
-    this.gl.uniformMatrix4fv(this.uniforms.view, true, view);
-    const projection = Matrix.orthographic(this.aspect_ratio);
-    this.gl.uniformMatrix4fv(this.uniforms.projection, true, projection);
+    // Upload uniforms
+    this.matrices = {
+      model: Matrix.identity,
+      view: Matrix.scale(0.25),
+      projection: Matrix.identity,
+    }
+    this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
+    this.gl.uniformMatrix4fv(this.uniforms.view, true, this.matrices.view);
+    this.gl.uniformMatrix4fv(this.uniforms.projection, true, this.matrices.projection);
 
     // Begin render loop
     window.requestAnimationFrame(() => this.render());
   }
 
-  async load_image(path: string): Promise<HTMLImageElement> {
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.src = path;
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('Failed to load image'));
-    });
+  async load_textures() {
+    // @ts-ignore
+    const board_url = require('/assets/board.png');
+    const board_img = await load_image(board_url);
+
+    // @ts-ignore
+    const piece_url = require('/assets/chess-pieces.png');
+    const piece_img = await load_image(piece_url);
+
+    let images: Texture_Image[][] = [
+      new Array<Texture_Image>(Type.COUNT),
+      new Array<Texture_Image>(Type.COUNT),
+    ];
+
+    const SQUARE_SIZE = this.BOARD_SIZE / 8;
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < Type.COUNT; j++) {
+        images[i][j] = {
+          element: piece_img,
+          x: j * SQUARE_SIZE,
+          y: i * SQUARE_SIZE,
+          width: SQUARE_SIZE,
+          height: SQUARE_SIZE,
+        };
+      }
+    }
+
+    this.textures = {
+      board: new Texture(this.gl, {
+        element: board_img,
+        x: 0, y: 0,
+        width: board_img.width, height: board_img.height
+      }),
+
+      pieces: [
+        images[Color.White].map((image) => new Texture(this.gl, image)),
+        images[Color.Black].map((image) => new Texture(this.gl, image)),
+      ]
+    }
   }
 
-  drawBoard() {
-    // this.textures.board.bind(0, this.uniforms.texture_sampler);
+  draw_board() {
+    this.textures.board.bind(0, this.uniforms.texture_sampler);
+    this.matrices.model = Matrix.scale(8);
+    this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
+    this.square.draw();
+  }
+
+  draw_piece(piece: Piece) {
+    const t = {
+      x: -3.5 + piece.square.file,
+      y: -3.5 + piece.square.rank,
+    };
+
+    this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
+    this.matrices.model = Matrix.translate(t);
+    this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
     this.square.draw();
   }
 
@@ -95,8 +152,21 @@ export default class Renderer {
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-    this.drawBoard();
+    this.draw_board();
+
+    const b = new King(new Square(7, 7), Color.Black);
+    const w = new King(new Square(0, 0), Color.White);
+    this.draw_piece(w);
+    this.draw_piece(b);
 
     window.requestAnimationFrame(() => this.render());
   }
 }
+const load_image = async (path: string) => new Promise<HTMLImageElement>(
+  (resolve, reject) => {
+    const image = new Image();
+    image.src = path;
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Failed to load image'));
+  }
+);

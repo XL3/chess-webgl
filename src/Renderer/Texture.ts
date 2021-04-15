@@ -1,15 +1,25 @@
-export default class Texture {
+export interface Texture_Image {
+  element: TexImageSource;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export class Texture {
   texture: WebGLTexture;
   gl: WebGL2RenderingContext;
 
-  constructor(gl: WebGL2RenderingContext, image?: HTMLImageElement) {
+  constructor(gl: WebGL2RenderingContext, image?: Texture_Image) {
     this.gl = gl;
     this.texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
     if (image) {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+        image.width, image.height, 0,
+        gl.RGBA, gl.UNSIGNED_BYTE, image.element);
+
     } else {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
         new Uint8Array([0, 0, 255, 255]));
@@ -22,6 +32,6 @@ export default class Texture {
   bind(slot: number, sampler_location: WebGLUniformLocation) {
     this.gl.activeTexture(this.gl.TEXTURE0 + slot);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-    this.gl.uniform1i(sampler_location, this.gl.TEXTURE0 + slot);
+    // this.gl.uniform1i(sampler_location, this.gl.TEXTURE0 + slot);
   }
 }

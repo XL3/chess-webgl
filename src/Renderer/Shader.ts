@@ -13,7 +13,7 @@ class Shader {
     return shader;
   };
 
-  static async createProgram(gl: WebGL2RenderingContext, shader: { vertex: string, fragment: string }): Promise<WebGLProgram> {
+  static async create_program(gl: WebGL2RenderingContext, shader: { vertex: string, fragment: string }): Promise<WebGLProgram> {
     const vertex_shader = await Shader.compile(gl, gl.VERTEX_SHADER, shader.vertex);
     const fragment_shader = await Shader.compile(gl, gl.FRAGMENT_SHADER, shader.fragment);
 
