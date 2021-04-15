@@ -33,7 +33,9 @@ class Shader {
 
 const shaders = {
   texture: {
+    // @ts-ignore
     vertex: require('/shaders/texture.vert'),
+    // @ts-ignore
     fragment: require('/shaders/texture.frag'),
   }
 };

@@ -1,9 +1,11 @@
 export default class Square {
+  gl: WebGL2RenderingContext;
   vao: WebGLVertexArrayObject;
   count: number;
   type: number;
 
   constructor(gl: WebGL2RenderingContext, shader_program: WebGLProgram) {
+    this.gl = gl;
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
 
@@ -53,8 +55,8 @@ export default class Square {
     this.type = gl.UNSIGNED_INT;
   }
 
-  draw(gl: WebGL2RenderingContext): void {
-    gl.bindVertexArray(this.vao);
-    gl.drawElements(gl.TRIANGLES, this.count, this.type, 0);
+  draw(): void {
+    this.gl.bindVertexArray(this.vao);
+    this.gl.drawElements(this.gl.TRIANGLES, this.count, this.type, 0);
   }
 };

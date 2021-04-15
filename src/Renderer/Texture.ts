@@ -1,6 +1,9 @@
 export default class Texture {
   texture: WebGLTexture;
+  gl: WebGL2RenderingContext;
+
   constructor(gl: WebGL2RenderingContext, image?: HTMLImageElement) {
+    this.gl = gl;
     this.texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
@@ -16,9 +19,9 @@ export default class Texture {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   }
 
-  bind(gl: WebGL2RenderingContext, slot: number, sampler_location: WebGLUniformLocation) {
-    gl.activeTexture(gl.TEXTURE0 + slot);
-    gl.bindTexture(gl.TEXTURE_2D, this.texture);
-    gl.uniform1i(sampler_location, gl.TEXTURE0 + slot);
+  bind(slot: number, sampler_location: WebGLUniformLocation) {
+    this.gl.activeTexture(this.gl.TEXTURE0 + slot);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.uniform1i(sampler_location, this.gl.TEXTURE0 + slot);
   }
 }
