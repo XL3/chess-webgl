@@ -43,7 +43,7 @@ export class King implements Piece {
     this.type = Type.King;
   }
 
-  can_move(square: Square) {
+  can_move(square: Square): boolean {
     return true;
   }
 }

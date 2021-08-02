@@ -6,8 +6,8 @@ export default class Matrix {
     0, 0, 0, 1,
   ]);
 
-  static scale(factor: number) {
-    const scaled = this.identity.map((x: number) => factor * x);
+  static scale(factor: number, mat: Float32Array = Matrix.identity) {
+    const scaled = mat.map((x: number) => factor * x);
     scaled[3] = scaled[7] = scaled[11] = 0;
     scaled[15] = 1;
     return scaled;
@@ -35,8 +35,8 @@ export default class Matrix {
     ]);
   }
 
-  static translate(t: { x: number, y: number }, matrix: Float32Array = Matrix.identity): Float32Array {
-    let translated = matrix;
+  static translate(t: { x: number, y: number }, mat: Float32Array = Matrix.identity): Float32Array {
+    let translated = mat;
     translated[3] = t.x;
     translated[7] = t.y;
     return translated;

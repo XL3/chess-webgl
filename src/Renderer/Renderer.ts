@@ -12,9 +12,10 @@ import {
 } from "../Chess/Piece";
 
 export default class Renderer {
-  BOARD_SIZE: number;
+  static BOARD_SIZE: number = 640;
 
   gl: WebGL2RenderingContext;
+  canvas: HTMLCanvasElement;
   shader_program: WebGLShader;
 
   uniforms: {
@@ -41,10 +42,35 @@ export default class Renderer {
     pieces?: Texture[][];
   };
 
-  constructor(gl: WebGL2RenderingContext, board_size: number = 1) {
+  static get_minimum_dimension(): number {
+    let width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
+    let height = (window.innerHeight > 0) ? window.innerHeight : screen.height;
+
+    width *= 0.8;
+    height *= 0.8;
+
+    return Math.min(width, height, Renderer.BOARD_SIZE);
+  }
+
+  constructor(canvas: HTMLCanvasElement) {
+    // Request WebGL context
+    const gl = canvas.getContext("webgl2", {
+      preserveDrawingBuffer: true,
+      alpha: true,
+      antialias: true,
+      depth: true,
+      powerPreference: "high-performance",
+      premultipliedAlpha: false,
+      stencil: true
+    });
+
+    if (!gl) return null;
+
     this.gl = gl;
-    this.BOARD_SIZE = board_size;
+    this.canvas = canvas;
     this.dt = this.time_elapsed = this.last_update = 0;
+
+    this.resize();
   }
 
   async init() {
@@ -72,13 +98,26 @@ export default class Renderer {
     // Upload uniforms
     this.matrices = {
       model: Matrix.identity,
-      view: Matrix.scale(0.25),
+
+      // Squares form up 1/8th of the screen
+      view: Matrix.scale(2 / 8),
       projection: Matrix.identity,
     }
     this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
     this.gl.uniformMatrix4fv(this.uniforms.view, true, this.matrices.view);
     this.gl.uniformMatrix4fv(this.uniforms.projection, true, this.matrices.projection);
+  }
 
+  resize() {
+    const dim = Renderer.get_minimum_dimension();
+
+    this.gl.viewport(0, 0, dim, dim);
+
+    this.canvas.width = dim;
+    this.canvas.height = dim;
+  }
+
+  begin_rendering() {
     // Begin render loop
     window.requestAnimationFrame(() => this.render());
   }
@@ -91,13 +130,14 @@ export default class Renderer {
     // @ts-ignore
     const piece_url = require('/assets/chess-pieces.png');
     const piece_img = await load_image(piece_url);
+    piece_img.className = "piece";
 
     let images: Texture_Image[][] = [
       new Array<Texture_Image>(Type.COUNT),
       new Array<Texture_Image>(Type.COUNT),
     ];
 
-    const SQUARE_SIZE = this.BOARD_SIZE / 8;
+    const SQUARE_SIZE = Renderer.BOARD_SIZE / 8;
     for (let i = 0; i < 2; i++) {
       for (let j = 0; j < Type.COUNT; j++) {
         images[i][j] = {
@@ -125,8 +165,10 @@ export default class Renderer {
   }
 
   draw_board() {
-    this.textures.board.bind(0, this.uniforms.texture_sampler);
+    // The board is 8 units large
     this.matrices.model = Matrix.scale(8);
+
+    this.textures.board.bind(0, this.uniforms.texture_sampler);
     this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
     this.square.draw();
   }
@@ -162,6 +204,7 @@ export default class Renderer {
     window.requestAnimationFrame(() => this.render());
   }
 }
+
 const load_image = async (path: string) => new Promise<HTMLImageElement>(
   (resolve, reject) => {
     const image = new Image();

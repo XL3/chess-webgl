@@ -10,6 +10,7 @@ export class Texture {
   texture: WebGLTexture;
   gl: WebGL2RenderingContext;
 
+  // TODO(Abdelrahman) Proper texture extraction
   constructor(gl: WebGL2RenderingContext, image?: Texture_Image) {
     this.gl = gl;
     this.texture = gl.createTexture();
@@ -32,6 +33,7 @@ export class Texture {
   bind(slot: number, sampler_location: WebGLUniformLocation) {
     this.gl.activeTexture(this.gl.TEXTURE0 + slot);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
-    // this.gl.uniform1i(sampler_location, this.gl.TEXTURE0 + slot);
+
+    this.gl.uniform1i(sampler_location, slot);
   }
 }
