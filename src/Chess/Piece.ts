@@ -31,16 +31,15 @@ export interface Piece {
   can_move(Square): boolean;
 }
 
-
-export class King implements Piece {
+export class C_Piece implements Piece {
   square: Square;
   color: Color;
   type: Type;
 
-  constructor(square: Square, color: Color) {
+  constructor(square: Square, color: Color, type: Type) {
     this.square = square;
     this.color = color;
-    this.type = Type.King;
+    this.type = type;
   }
 
   can_move(square: Square): boolean {

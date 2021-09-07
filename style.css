@@ -3,39 +3,37 @@ body {
 }
 
 #main {
-  font-family: 'Roboto Mono';
+  font-family: 'SF Pro Text';
   text-align: center;
-  margin-top: 5%;
-  margin-bottom: 5%;
+  padding-top: 5%;
+  padding-bottom: 5%;
 }
 
 #main:focus {
   outline: none
 }
 
-/* #title-div {} */
+#title-div {
+  padding-bottom: 3%;
+}
+
+#title-div > h1{
+  margin: 0%;
+}
 
 .div-container {
-  margin-left: 10%;
-  margin-right: 10%;
+  padding-left: 10%;
+  padding-right: 10%;
   display: flex;
   flex-flow: row wrap;
   justify-content: center;
 }
 
-.div-container > div {
-  margin-left: auto;
-  margin-right: auto;
+#canvas-div {
+  flex-basis: 70%;
 }
 
-/* #canvas-div {} */
-
-#changelog-div {
-  text-align: left !important;
-}
-
-img.piece {
-  width: 80px;
-  height: 80px;
-  object-fit: none;
+#description-div {
+  text-align: left;
+  flex-basis: 30%;
 }

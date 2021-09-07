@@ -10,6 +10,20 @@ export class Texture {
   texture: WebGLTexture;
   gl: WebGL2RenderingContext;
 
+  private static uploadTextureImage(gl: WebGL2RenderingContext, image: Texture_Image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+
+    const ctx = canvas.getContext('2d');
+    const img = image.element as HTMLImageElement;
+
+    ctx.drawImage(img, image.x, image.y, image.width, image.height, 0, 0, image.width, image.height);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+      image.width, image.height, 0,
+      gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  }
+
   // TODO(Abdelrahman) Proper texture extraction
   constructor(gl: WebGL2RenderingContext, image?: Texture_Image) {
     this.gl = gl;
@@ -17,10 +31,7 @@ export class Texture {
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
     if (image) {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
-        image.width, image.height, 0,
-        gl.RGBA, gl.UNSIGNED_BYTE, image.element);
-
+      Texture.uploadTextureImage(gl, image);
     } else {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
         new Uint8Array([0, 0, 255, 255]));

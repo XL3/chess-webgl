@@ -12,7 +12,7 @@ import {
   Type,
   Color,
   Piece,
-  King,
+  C_Piece,
 } from "../Chess/Piece";
 
 export default class Renderer {
@@ -46,7 +46,7 @@ export default class Renderer {
     pieces?: Texture[][];
   };
 
-  static get_minimum_dimension(): number {
+  static getMinimumDimension(): number {
     let width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
     let height = (window.innerHeight > 0) ? window.innerHeight : screen.height;
 
@@ -99,7 +99,7 @@ export default class Renderer {
 
     // Create textures and meshes
     this.square = new Mesh_Square(this.gl, this.shader_program);
-    await this.load_textures();
+    await this.loadTextures();
 
     // Upload uniforms
     this.matrices = {
@@ -115,7 +115,7 @@ export default class Renderer {
   }
 
   resize() {
-    const dim = Renderer.get_minimum_dimension();
+    const dim = Renderer.getMinimumDimension();
 
     this.gl.viewport(0, 0, dim, dim);
 
@@ -128,13 +128,12 @@ export default class Renderer {
     window.requestAnimationFrame(() => this.render());
   }
 
-  async load_textures() {
+  async loadTextures() {
     // @ts-ignore
-    const board_img = await load_image(board_url);
+    const board_img = await loadImage(board_url);
 
     // @ts-ignore
-    const piece_img = await load_image(piece_url);
-    piece_img.className = "piece";
+    const piece_img = await loadImage(piece_url);
 
     let images: Texture_Image[][] = [
       new Array<Texture_Image>(Type.COUNT),
@@ -169,7 +168,7 @@ export default class Renderer {
     console.log(images);
   }
 
-  draw_board() {
+  drawBoard() {
     // The board is 8 units large
     this.matrices.model = Matrix.scale(8);
 
@@ -178,7 +177,7 @@ export default class Renderer {
     this.square.draw();
   }
 
-  draw_piece(piece: Piece) {
+  drawPiece(piece: Piece) {
     const t = {
       x: -3.5 + piece.square.file,
       y: -3.5 + piece.square.rank,
@@ -199,18 +198,19 @@ export default class Renderer {
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-    this.draw_board();
+    this.drawBoard();
 
-    const b = new King(new Square(7, 7), Color.Black);
-    const w = new King(new Square(0, 0), Color.White);
-    this.draw_piece(w);
-    this.draw_piece(b);
+    const Kh8 = new C_Piece(new Square(7, 7), Color.Black, Type.King);
+    const Na1 = new C_Piece(new Square(0, 0), Color.White, Type.Knight);
+
+    this.drawPiece(Kh8);
+    this.drawPiece(Na1);
 
     window.requestAnimationFrame(() => this.render());
   }
 }
 
-const load_image = async (path: string) => new Promise<HTMLImageElement>(
+const loadImage = async (path: string) => new Promise<HTMLImageElement>(
   (resolve, reject) => {
     const image = new Image();
     image.src = path;

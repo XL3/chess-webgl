@@ -1,4 +1,4 @@
-export default class Square {
+export default class Mesh_Square {
   gl: WebGL2RenderingContext;
   vao: WebGLVertexArrayObject;
   count: number;
