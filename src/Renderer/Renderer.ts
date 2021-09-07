@@ -2,6 +2,10 @@ import { Shader, shaders } from "./Shader";
 import Mesh_Square from "./Mesh_Square";
 import { Texture, Texture_Image } from "./Texture";
 import Matrix from "./Matrix";
+// @ts-ignore
+import board_url from "url:/assets/board.png";
+// @ts-ignore
+import piece_url from "url:/assets/chess-pieces.png";
 
 import {
   Square,
@@ -65,6 +69,8 @@ export default class Renderer {
     });
 
     if (!gl) return null;
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.BLEND);
 
     this.gl = gl;
     this.canvas = canvas;
@@ -100,7 +106,7 @@ export default class Renderer {
       model: Matrix.identity,
 
       // Squares form up 1/8th of the screen
-      view: Matrix.scale(2 / 8),
+      view: Matrix.scale((1.0 - -1.0) / 8),
       projection: Matrix.identity,
     }
     this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
@@ -124,11 +130,9 @@ export default class Renderer {
 
   async load_textures() {
     // @ts-ignore
-    const board_url = require('/assets/board.png');
     const board_img = await load_image(board_url);
 
     // @ts-ignore
-    const piece_url = require('/assets/chess-pieces.png');
     const piece_img = await load_image(piece_url);
     piece_img.className = "piece";
 
@@ -162,6 +166,7 @@ export default class Renderer {
         images[Color.Black].map((image) => new Texture(this.gl, image)),
       ]
     }
+    console.log(images);
   }
 
   draw_board() {
