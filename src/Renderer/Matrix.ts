@@ -1,3 +1,12 @@
+type Ortho_Tuple = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  near: number;
+  far: number;
+};
+
 export default class Matrix {
   static identity: Float32Array = new Float32Array([
     1, 0, 0, 0,
@@ -13,19 +22,16 @@ export default class Matrix {
     return scaled;
   }
 
-  static orthographic(aspect_ratio: number, near: number = 0, far: number = 100): Float32Array {
-    let left = -1;
-    let right = 1;
-    let bottom = -1;
-    let top = 1;
+  static orthographic(tuple: Ortho_Tuple): Float32Array {
+    let {left, right, top, bottom, near, far} = tuple;
 
-    if (aspect_ratio > 1) {
-      left *= aspect_ratio;
-      right *= aspect_ratio;
-    } else {
-      bottom *= 1 / aspect_ratio;
-      top *= 1 / aspect_ratio;
-    }
+    // if (aspect_ratio > 1) {
+    //   left *= aspect_ratio;
+    //   right *= aspect_ratio;
+    // } else {
+    //   bottom *= 1 / aspect_ratio;
+    //   top *= 1 / aspect_ratio;
+    // }
 
     return new Float32Array([
       2 / (right - left), 0, 0, (left + right) / (left - right),

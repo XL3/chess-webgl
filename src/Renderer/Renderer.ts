@@ -17,6 +17,7 @@ import {
 
 export default class Renderer {
   static BOARD_SIZE: number = 640;
+  static SQUARE_SIZE: number = 640/8;
 
   gl: WebGL2RenderingContext;
   canvas: HTMLCanvasElement;
@@ -46,6 +47,8 @@ export default class Renderer {
     pieces?: Texture[][];
   };
 
+  lmb_is_clicked: boolean;
+
   static getMinimumDimension(): number {
     let width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
     let height = (window.innerHeight > 0) ? window.innerHeight : screen.height;
@@ -54,6 +57,31 @@ export default class Renderer {
     height *= 0.8;
 
     return Math.min(width, height, Renderer.BOARD_SIZE);
+  }
+
+  setEventHandlers() {
+    this.lmb_is_clicked = false;
+    this.canvas.onmousedown = (ev: MouseEvent) => {
+      if (ev.button == 0) {
+        this.lmb_is_clicked = true;
+      }
+    }
+    this.canvas.onmouseout = this.canvas.onmouseup = (ev: MouseEvent) => {
+      this.lmb_is_clicked = false;
+    }
+
+    this.canvas.onmousemove = (ev: MouseEvent) => {
+      // Holding
+      if (this.lmb_is_clicked) {
+        const dim = Renderer.getMinimumDimension();
+        const file = Math.floor(8 * ev.offsetX / dim);
+        const rank = Math.floor(8 * ev.offsetY / dim);
+
+        // TODO Flip the board
+        const sq = new Square(7 - rank, file);
+        console.log(`${sq}`);
+      } 
+    }
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -67,6 +95,7 @@ export default class Renderer {
       premultipliedAlpha: false,
       stencil: true
     });
+    
 
     if (!gl) return null;
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -76,6 +105,7 @@ export default class Renderer {
     this.canvas = canvas;
     this.dt = this.time_elapsed = this.last_update = 0;
 
+    this.setEventHandlers();
     this.resize();
   }
 
@@ -104,10 +134,10 @@ export default class Renderer {
     // Upload uniforms
     this.matrices = {
       model: Matrix.identity,
-
-      // Squares form up 1/8th of the screen
-      view: Matrix.scale((1.0 - -1.0) / 8),
-      projection: Matrix.identity,
+      view: Matrix.identity,
+      projection: Matrix.orthographic({
+        left: -320, right: 320, top: 320, bottom: -320, near: 0, far: 1
+      }),
     }
     this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
     this.gl.uniformMatrix4fv(this.uniforms.view, true, this.matrices.view);
@@ -123,7 +153,7 @@ export default class Renderer {
     this.canvas.height = dim;
   }
 
-  begin_rendering() {
+  startRendering() {
     // Begin render loop
     window.requestAnimationFrame(() => this.render());
   }
@@ -165,12 +195,10 @@ export default class Renderer {
         images[Color.Black].map((image) => new Texture(this.gl, image)),
       ]
     }
-    console.log(images);
   }
 
   drawBoard() {
-    // The board is 8 units large
-    this.matrices.model = Matrix.scale(8);
+    this.matrices.model = Matrix.scale(Renderer.BOARD_SIZE);
 
     this.textures.board.bind(0, this.uniforms.texture_sampler);
     this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
@@ -179,12 +207,15 @@ export default class Renderer {
 
   drawPiece(piece: Piece) {
     const t = {
-      x: -3.5 + piece.square.file,
-      y: -3.5 + piece.square.rank,
+      x: Renderer.SQUARE_SIZE * (-3.5 + piece.square.file),
+      y: Renderer.SQUARE_SIZE * (-3.5 + piece.square.rank),
     };
 
     this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
-    this.matrices.model = Matrix.translate(t);
+    let model = Matrix.scale(Renderer.SQUARE_SIZE);
+    model = Matrix.translate(t, model);
+
+    this.matrices.model = model;
     this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
     this.square.draw();
   }

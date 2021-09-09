@@ -9,7 +9,7 @@ window.onload = async () => {
 
   renderer = new Renderer(glCanvas);
   await renderer.init();
-  renderer.begin_rendering();
+  renderer.startRendering();
 }
 
 window.onresize = async () => {

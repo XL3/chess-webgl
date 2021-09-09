@@ -21,6 +21,12 @@ export class Square {
     this.rank = rank;
     this.file = file;
   }
+
+  public toString(): string {
+    let rank = 1 + this.rank;
+    let file = 'A'.charCodeAt(0) + this.file;
+    return `${String.fromCharCode(file)}${rank}`;
+  }
 }
 
 export interface Piece {
