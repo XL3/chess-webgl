@@ -14,17 +14,29 @@ export enum Type {
 }
 
 export class Square {
-  rank: number;
   file: number;
+  rank: number;
 
-  constructor(rank: number = 0, file: number = 0) {
-    this.rank = rank;
-    this.file = file;
+  constructor(square: string = '') {
+    if (square === '') {
+      square = 'A1';
+    }
+    this.fromString(square);
   }
 
-  public toString(): string {
-    let rank = 1 + this.rank;
+  fromCoordinates(file: number, rank: number) {
+    this.file = file;
+    this.rank = rank;
+  }
+
+  fromString(square: string) {
+    this.file = square[0].charCodeAt(0) - 'A'.charCodeAt(0);
+    this.rank = square[1].charCodeAt(0) - '1'.charCodeAt(0);
+  }
+
+  toString(): string {
     let file = 'A'.charCodeAt(0) + this.file;
+    let rank = 1 + this.rank;
     return `${String.fromCharCode(file)}${rank}`;
   }
 }
@@ -42,13 +54,17 @@ export class C_Piece implements Piece {
   color: Color;
   type: Type;
 
-  constructor(square: Square, color: Color, type: Type) {
-    this.square = square;
+  constructor(square: string, color: Color, type: Type) {
+    this.square = new Square(square);
     this.color = color;
     this.type = type;
   }
 
   can_move(square: Square): boolean {
     return true;
+  }
+
+  toString(): string {
+    return `[${this.square}] ${Color[this.color]} ${Type[this.type]}`;
   }
 }

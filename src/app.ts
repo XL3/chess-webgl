@@ -1,17 +1,6 @@
-import Renderer from "./Renderer/Renderer";
+import Chess from "./Chess/Chess";
 
-var renderer: Renderer;
-
-window.onload = async () => {
-  // Create canvas and add event handler
-  const main = document.querySelector('#main');
-  const glCanvas: HTMLCanvasElement = main.querySelector('#glCanvas');
-
-  renderer = new Renderer(glCanvas);
-  await renderer.init();
-  renderer.startRendering();
-}
-
-window.onresize = async () => {
-  renderer.resize();
+window.onload = () => {
+  let chess = new Chess();
+  chess.init();
 }
