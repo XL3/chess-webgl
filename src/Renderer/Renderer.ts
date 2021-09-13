@@ -1,5 +1,7 @@
 // @ts-ignore
-import board_url from "url:/assets/board.png";
+import board_white_url from "url:/assets/board-white.png";
+// @ts-ignore
+import board_black_url from "url:/assets/board-black.png";
 // @ts-ignore
 import piece_url from "url:/assets/chess-pieces.png";
 
@@ -13,7 +15,6 @@ import {
     Type,
     Color,
     Piece,
-    C_Piece,
 } from "../Chess/Piece";
 
 export default class Renderer {
@@ -24,6 +25,7 @@ export default class Renderer {
     canvas: HTMLCanvasElement;
     shader_program: WebGLShader;
     pieces: Array<Piece[]>;
+    turn: Color;
 
     uniforms: {
         projection: WebGLUniformLocation,
@@ -42,35 +44,50 @@ export default class Renderer {
     last_update: number;
     time_elapsed: number;
     dt: number;
+    move_delay: number;
 
     square: Mesh_Square;
     textures: {
-        board: Texture
-        pieces?: Texture[][];
+        board: Texture[];
+        pieces: Texture[][];
+    };
+
+    held_piece: Piece;
+    held_at: {
+        x: number;
+        y: number;
     };
 
     drawBoard() {
         this.matrices.model = Matrix.scale(Renderer.BOARD_SIZE);
 
-        this.textures.board.bind(0, this.uniforms.texture_sampler);
+        this.textures.board[this.turn].bind(0, this.uniforms.texture_sampler);
         this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
         this.square.draw();
     }
 
-    drawPiece(piece: Piece, at?: { x: number, y: number }) {
-        // Offset to middle of square
-        const t = at || {
-            x: Renderer.SQUARE_SIZE * (piece.square.file + 0.5),
-            y: Renderer.SQUARE_SIZE * (piece.square.rank + 0.5),
-        };
+    drawPiece(piece: Piece) {
+        // Offset to lower left square
+        let translate = { x: -4 * Renderer.SQUARE_SIZE, y: -4 * Renderer.SQUARE_SIZE };
 
-        // Offset to lower left
-        t.x -= Renderer.SQUARE_SIZE * 4;
-        t.y -= Renderer.SQUARE_SIZE * 4;
+        if (this.held_piece && piece == this.held_piece) {
+            translate.x += this.held_at.x;
+            translate.y += this.held_at.y;
+            translate.y = -translate.y;
+
+        } else {
+            // Offset to middle of lower left square
+            translate.x += Renderer.SQUARE_SIZE * (piece.square.file + 0.5);
+            translate.y += Renderer.SQUARE_SIZE * (piece.square.rank + 0.5);
+            if (this.turn == Color.Black) {
+                translate.y = -translate.y;
+            }
+        }
+
 
         this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
         let model = Matrix.scale(Renderer.SQUARE_SIZE);
-        model = Matrix.translate(t, model);
+        model = Matrix.translate(translate, model);
 
         this.matrices.model = model;
         this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
@@ -87,16 +104,21 @@ export default class Renderer {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
         this.drawBoard();
-        this.pieces.forEach(arr => arr.forEach(piece => this.drawPiece(piece)));
+        for (let color of this.pieces) {
+            color
+                .filter(p => this.held_piece != p)
+                .forEach(p => this.drawPiece(p));
+        }
+        if (this.held_piece) {
+            this.drawPiece(this.held_piece);
+        }
 
         window.requestAnimationFrame(() => this.render());
     }
 
     async loadTextures() {
-        // @ts-ignore
-        const board_img = await Renderer.loadImage(board_url);
-
-        // @ts-ignore
+        const board_white_img = await Renderer.loadImage(board_white_url);
+        const board_black_img = await Renderer.loadImage(board_black_url);
         const piece_img = await Renderer.loadImage(piece_url);
 
         let images: Texture_Image[][] = [
@@ -118,11 +140,18 @@ export default class Renderer {
         }
 
         this.textures = {
-            board: new Texture(this.gl, {
-                element: board_img,
-                x: 0, y: 0,
-                width: board_img.width, height: board_img.height
-            }),
+            board: [
+                    new Texture(this.gl, {
+                        element: board_white_img,
+                        x: 0, y: 0,
+                        width: board_white_img.width, height: board_white_img.height
+                    }),
+                    new Texture(this.gl, {
+                        element: board_black_img,
+                        x: 0, y: 0,
+                        width: board_black_img.width, height: board_black_img.height
+                    })
+            ],
 
             pieces: [
                 images[Color.White].map((image) => new Texture(this.gl, image)),
@@ -229,5 +258,4 @@ export default class Renderer {
         this.pieces = pieces;
         this.resize();
     }
-
 }
