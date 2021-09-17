@@ -58,6 +58,20 @@ export default class Renderer {
         y: number;
     };
 
+    findSquare(x: number, y: number): Square {
+        const dim = Renderer.getMinimumDimension();
+        const file = Math.floor(8 * x / dim);
+
+        // Board starts at bottom
+        let rank = Math.floor(8 * y / dim);
+        rank = this.turn == Color.White ? 7 - rank : rank;
+
+        const sq = new Square();
+        sq.fromCoordinates(file, rank);
+
+        return sq;
+    }
+
     drawBoard() {
         this.matrices.model = Matrix.scale(Renderer.BOARD_SIZE);
 
@@ -141,16 +155,16 @@ export default class Renderer {
 
         this.textures = {
             board: [
-                    new Texture(this.gl, {
-                        element: board_white_img,
-                        x: 0, y: 0,
-                        width: board_white_img.width, height: board_white_img.height
-                    }),
-                    new Texture(this.gl, {
-                        element: board_black_img,
-                        x: 0, y: 0,
-                        width: board_black_img.width, height: board_black_img.height
-                    })
+                new Texture(this.gl, {
+                    element: board_white_img,
+                    x: 0, y: 0,
+                    width: board_white_img.width, height: board_white_img.height
+                }),
+                new Texture(this.gl, {
+                    element: board_black_img,
+                    x: 0, y: 0,
+                    width: board_black_img.width, height: board_black_img.height
+                })
             ],
 
             pieces: [
@@ -178,10 +192,6 @@ export default class Renderer {
             time: this.gl.getUniformLocation(this.shader_program, 'time'),
         }
 
-        // Create textures and meshes
-        this.square = new Mesh_Square(this.gl, this.shader_program);
-        await this.loadTextures();
-
         // Upload uniforms
         this.matrices = {
             model: Matrix.identity,
@@ -198,6 +208,10 @@ export default class Renderer {
         this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
         this.gl.uniformMatrix4fv(this.uniforms.view, true, this.matrices.view);
         this.gl.uniformMatrix4fv(this.uniforms.projection, true, this.matrices.projection);
+
+        // Create textures and meshes
+        this.square = new Mesh_Square(this.gl, this.shader_program);
+        await this.loadTextures();
     }
 
     resize() {

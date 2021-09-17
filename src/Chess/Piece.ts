@@ -39,6 +39,10 @@ export class Square {
     let rank = 1 + this.rank;
     return `${String.fromCharCode(file)}${rank}`;
   }
+
+  compare(sq: Square): boolean {
+    return this.file === sq.file && this.rank === sq.rank;
+  }
 }
 
 export interface Piece {

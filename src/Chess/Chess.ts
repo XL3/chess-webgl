@@ -8,6 +8,14 @@ import {
     C_Piece,
 } from "../Chess/Piece";
 
+enum MouseEvent_Button {
+    main, // Left
+    auxiliary, // Middle
+    secondary, // Right
+    fourth, // Browser back
+    fifth, // Browser forward
+}
+
 export default class Chess {
     renderer: Renderer;
     canvas: HTMLCanvasElement;
@@ -26,22 +34,9 @@ export default class Chess {
         window.onresize = () => this.renderer.resize();
     }
 
-    findSquare(x: number, y: number): Square {
-        const dim = Renderer.getMinimumDimension();
-        const file = Math.floor(8 * x / dim);
-
-        // Board starts at bottom
-        let rank = Math.floor(8 * y / dim);
-        rank = this.renderer.turn == Color.White ? 7 - rank : rank;
-
-        const sq = new Square();
-        sq.fromCoordinates(file, rank);
-
-        return sq;
-    }
 
     findPiece(sq: Square): Piece {
-        const comp = (piece: Piece) => (sq.file === piece.square.file) && (sq.rank === piece.square.rank);
+        const comp = (piece: Piece) => sq.compare(piece.square);
 
         let piece: Piece = this.pieces[Color.White].find(comp)
             || this.pieces[Color.Black].find(comp);
@@ -50,19 +45,27 @@ export default class Chess {
     }
 
     makeMove(sq: Square) {
-        if (this.renderer.held_piece) {
+        // If a piece is held and a non-trivial move was made
+        if (this.renderer.held_piece && !sq.compare(this.renderer.held_piece.square)) {
             const taking = this.findPiece(sq);
-            if (taking) {
+            if (taking && taking.color != this.renderer.turn) {
                 this.takePiece(taking);
+
+                this.renderer.held_piece.square = sq;
+                setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
+
+            } else if (!taking) {
+                this.renderer.held_piece.square = sq;
+                setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
             }
-            this.renderer.held_piece.square = sq;
-            setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 170);
         }
         this.renderer.held_piece = undefined;
     }
 
     takePiece(piece: Piece) {
+        // Same instance
         const pred = p => piece == p;
+
         let at = this.pieces[piece.color].findIndex(pred);
         this.pieces[piece.color].splice(at, 1);
     }
@@ -70,15 +73,26 @@ export default class Chess {
     setEventHandlers() {
         this.renderer.held_piece = undefined;
         this.renderer.held_at = { x: 0, y: 0 };
+
+        this.canvas.oncontextmenu = (ev: MouseEvent) => ev.preventDefault();
+
         this.canvas.onmousedown = (ev: MouseEvent) => {
-            if (ev.button == 0) {
-                const sq = this.findSquare(ev.offsetX, ev.offsetY);
-                const piece = this.findPiece(sq);
-                if (piece) {
-                    this.renderer.held_piece = piece;
-                    this.renderer.held_at.x = ev.offsetX;
-                    this.renderer.held_at.y = ev.offsetY;
-                }
+            switch (ev.button) {
+                case MouseEvent_Button.main:
+                    const sq = this.renderer.findSquare(ev.offsetX, ev.offsetY);
+                    const piece = this.findPiece(sq);
+                    if (piece) {
+                        this.renderer.held_piece = piece;
+                        this.renderer.held_at.x = ev.offsetX;
+                        this.renderer.held_at.y = ev.offsetY;
+                    }
+                    break;
+
+                case MouseEvent_Button.secondary:
+                    this.canvas.onmouseout(ev);
+                    break;
+
+                default: break;
             }
         }
         this.canvas.onmousemove = (ev: MouseEvent) => {
@@ -92,7 +106,7 @@ export default class Chess {
             this.renderer.held_piece = undefined;
         }
         this.canvas.onmouseup = (ev: MouseEvent) => {
-            const sq = this.findSquare(ev.offsetX, ev.offsetY);
+            const sq = this.renderer.findSquare(ev.offsetX, ev.offsetY);
             this.makeMove(sq);
         }
     }
