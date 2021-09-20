@@ -5,7 +5,6 @@ import {
     Type,
     Color,
     Piece,
-    C_Piece,
 } from "../Chess/Piece";
 
 enum MouseEvent_Button {
@@ -46,17 +45,21 @@ export default class Chess {
 
     makeMove(sq: Square) {
         // If a piece is held and a non-trivial move was made
+        const hp = this.renderer.held_piece;
         if (this.renderer.held_piece && !sq.compare(this.renderer.held_piece.square)) {
             const taking = this.findPiece(sq);
+            const processMove = (take: boolean) => {
+                if (!hp.canMovePseudoLegal(sq)) return;
+
+                if (take) this.takePiece(taking);
+                this.renderer.held_piece.square = sq;
+                setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
+            };
+
             if (taking && taking.color != this.renderer.turn) {
-                this.takePiece(taking);
-
-                this.renderer.held_piece.square = sq;
-                setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
-
+                processMove(true);
             } else if (!taking) {
-                this.renderer.held_piece.square = sq;
-                setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
+                processMove(false);
             }
         }
         this.renderer.held_piece = undefined;
@@ -115,43 +118,43 @@ export default class Chess {
         this.pieces = [new Array<Piece>(8), new Array<Piece>(8)];
 
         // Kings and Queens
-        this.pieces[Color.White][0] = new C_Piece('e1', Color.White, Type.King);
-        this.pieces[Color.White][1] = new C_Piece('d1', Color.White, Type.Queen);
+        this.pieces[Color.White][0] = new Piece('e1', Color.White, Type.King);
+        this.pieces[Color.White][1] = new Piece('d1', Color.White, Type.Queen);
 
-        this.pieces[Color.Black][0] = new C_Piece('e8', Color.Black, Type.King);
-        this.pieces[Color.Black][1] = new C_Piece('d8', Color.Black, Type.Queen);
+        this.pieces[Color.Black][0] = new Piece('e8', Color.Black, Type.King);
+        this.pieces[Color.Black][1] = new Piece('d8', Color.Black, Type.Queen);
 
 
         // Rooks
-        this.pieces[Color.White][2] = new C_Piece('h1', Color.White, Type.Rook);
-        this.pieces[Color.White][3] = new C_Piece('a1', Color.White, Type.Rook);
+        this.pieces[Color.White][2] = new Piece('h1', Color.White, Type.Rook);
+        this.pieces[Color.White][3] = new Piece('a1', Color.White, Type.Rook);
 
-        this.pieces[Color.Black][2] = new C_Piece('h8', Color.Black, Type.Rook);
-        this.pieces[Color.Black][3] = new C_Piece('a8', Color.Black, Type.Rook);
+        this.pieces[Color.Black][2] = new Piece('h8', Color.Black, Type.Rook);
+        this.pieces[Color.Black][3] = new Piece('a8', Color.Black, Type.Rook);
 
 
         // Knights
-        this.pieces[Color.White][4] = new C_Piece('g1', Color.White, Type.Knight);
-        this.pieces[Color.White][5] = new C_Piece('b1', Color.White, Type.Knight);
+        this.pieces[Color.White][4] = new Piece('g1', Color.White, Type.Knight);
+        this.pieces[Color.White][5] = new Piece('b1', Color.White, Type.Knight);
 
-        this.pieces[Color.Black][4] = new C_Piece('g8', Color.Black, Type.Knight);
-        this.pieces[Color.Black][5] = new C_Piece('b8', Color.Black, Type.Knight);
+        this.pieces[Color.Black][4] = new Piece('g8', Color.Black, Type.Knight);
+        this.pieces[Color.Black][5] = new Piece('b8', Color.Black, Type.Knight);
 
 
         // Bishops
-        this.pieces[Color.White][6] = new C_Piece('c1', Color.White, Type.Bishop);
-        this.pieces[Color.White][7] = new C_Piece('f1', Color.White, Type.Bishop);
+        this.pieces[Color.White][6] = new Piece('c1', Color.White, Type.Bishop);
+        this.pieces[Color.White][7] = new Piece('f1', Color.White, Type.Bishop);
 
-        this.pieces[Color.Black][6] = new C_Piece('c8', Color.Black, Type.Bishop);
-        this.pieces[Color.Black][7] = new C_Piece('f8', Color.Black, Type.Bishop);
+        this.pieces[Color.Black][6] = new Piece('c8', Color.Black, Type.Bishop);
+        this.pieces[Color.Black][7] = new Piece('f8', Color.Black, Type.Bishop);
 
         // Pawns
         let pidx = 8;
         for (let i = 0; i < 8; i++, pidx++) {
-            this.pieces[Color.White][pidx] = new C_Piece('', Color.White, Type.Pawn);
+            this.pieces[Color.White][pidx] = new Piece('', Color.White, Type.Pawn);
             this.pieces[Color.White][pidx].square.fromCoordinates(i, 1);
 
-            this.pieces[Color.Black][pidx] = new C_Piece('', Color.Black, Type.Pawn);
+            this.pieces[Color.Black][pidx] = new Piece('', Color.Black, Type.Pawn);
             this.pieces[Color.Black][pidx].square.fromCoordinates(i, 6);
         }
     }
