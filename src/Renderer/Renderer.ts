@@ -1,20 +1,25 @@
 // @ts-ignore
-import board_white_url from "url:/assets/board-white.png";
+import board_white_url from "/assets/board-white.png";
 // @ts-ignore
-import board_black_url from "url:/assets/board-black.png";
+import board_black_url from "/assets/board-black.png";
 // @ts-ignore
-import piece_url from "url:/assets/chess-pieces.png";
+import piece_url from "/assets/chess-pieces.png";
+// @ts-ignore
+import dot_url from "/assets/dot.png";
+// @ts-ignore
+import outline_url from "/assets/outline.png";
 
 import { Shader, shaders } from "./Shader";
 import Mesh_Square from "./Mesh_Square";
 import { Texture, Texture_Image } from "./Texture";
-import Matrix from "./Matrix";
+import { Translate_Tuple, Matrix } from "./Matrix";
 
 import {
     Square,
     Type,
     Color,
     Piece,
+    Square_Augment,
 } from "../Chess/Piece";
 
 export default class Renderer {
@@ -50,13 +55,12 @@ export default class Renderer {
     textures: {
         board: Texture[];
         pieces: Texture[][];
+        dot: Texture;
+        outline: Texture;
     };
 
     held_piece: Piece;
-    held_at: {
-        x: number;
-        y: number;
-    };
+    held_at: Translate_Tuple;
 
     findSquare(x: number, y: number): Square {
         const dim = Renderer.getMinimumDimension();
@@ -72,36 +76,55 @@ export default class Renderer {
         return sq;
     }
 
-    drawBoard() {
-        this.matrices.model = Matrix.scale(Renderer.BOARD_SIZE);
-
-        this.textures.board[this.turn].bind(0, this.uniforms.texture_sampler);
-        this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
-        this.square.draw();
-    }
-
-    drawPiece(piece: Piece) {
+    prepareSquare(sq: Square, t: Translate_Tuple = null): Float32Array {
         // Offset to lower left square
         let translate = { x: -4 * Renderer.SQUARE_SIZE, y: -4 * Renderer.SQUARE_SIZE };
 
-        if (this.held_piece && piece == this.held_piece) {
-            translate.x += this.held_at.x;
-            translate.y += this.held_at.y;
+        if (t) {
+            translate.x += t.x;
+            translate.y += t.y;
             translate.y = -translate.y;
-
         } else {
             // Offset to middle of lower left square
-            translate.x += Renderer.SQUARE_SIZE * (piece.square.file + 0.5);
-            translate.y += Renderer.SQUARE_SIZE * (piece.square.rank + 0.5);
+            translate.x += Renderer.SQUARE_SIZE * (sq.file + 0.5);
+            translate.y += Renderer.SQUARE_SIZE * (sq.rank + 0.5);
             if (this.turn == Color.Black) {
                 translate.y = -translate.y;
             }
         }
 
-
-        this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
         let model = Matrix.scale(Renderer.SQUARE_SIZE);
         model = Matrix.translate(translate, model);
+        return model;
+    }
+
+    drawBoard(augments: Square[]) {
+        this.matrices.model = Matrix.scale(Renderer.BOARD_SIZE);
+
+        this.textures.board[this.turn].bind(0, this.uniforms.texture_sampler);
+        this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
+        this.square.draw();
+
+        augments.forEach(augment => {
+            this.matrices.model = this.prepareSquare(augment);
+            switch (augment.augment) {
+                case Square_Augment.dot:
+                    this.textures.dot.bind(0, this.uniforms.texture_sampler);
+                    break;
+                case Square_Augment.outline:
+                    this.textures.outline.bind(0, this.uniforms.texture_sampler);
+                    break;
+                default: return;
+            }
+            this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
+            this.square.draw();
+        });
+    }
+
+    drawPiece(piece: Piece) {
+        let t = this.held_piece && piece == this.held_piece ? this.held_at : null;
+        let model = this.prepareSquare(piece.square, t);
+        this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
 
         this.matrices.model = model;
         this.gl.uniformMatrix4fv(this.uniforms.model, true, this.matrices.model);
@@ -117,7 +140,10 @@ export default class Renderer {
         this.gl.clearColor(0, 0, 0, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-        this.drawBoard();
+        let testaug = new Square('b3');
+        // testaug.augment = Square_Augment.dot;
+
+        this.drawBoard([testaug]);
         for (let color of this.pieces) {
             color
                 .filter(p => this.held_piece != p)
@@ -134,6 +160,8 @@ export default class Renderer {
         const board_white_img = await Renderer.loadImage(board_white_url);
         const board_black_img = await Renderer.loadImage(board_black_url);
         const piece_img = await Renderer.loadImage(piece_url);
+        const dot_img = await Renderer.loadImage(dot_url);
+        const outline_img = await Renderer.loadImage(outline_url);
 
         let images: Texture_Image[][] = [
             new Array<Texture_Image>(Type.COUNT),
@@ -170,7 +198,19 @@ export default class Renderer {
             pieces: [
                 images[Color.White].map((image) => new Texture(this.gl, image)),
                 images[Color.Black].map((image) => new Texture(this.gl, image)),
-            ]
+            ],
+
+            dot: new Texture(this.gl, {
+                element: dot_img,
+                x: 0, y: 0,
+                width: dot_img.width, height: dot_img.height
+            }),
+
+            outline: new Texture(this.gl, {
+                element: outline_img,
+                x: 0, y: 0,
+                width: outline_img.width, height: outline_img.height
+            }),
         }
     }
 

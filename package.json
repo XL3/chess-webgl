@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/XL3/chess-webgl#readme",
   "devDependencies": {
+    "@parcel/resolver-glob": "2.0.0-rc.0",
     "@parcel/transformer-glsl": "^2.0.0-rc.0",
     "@parcel/transformer-image": "^2.0.0-rc.0",
     "parcel": "^2.0.0-rc.0",

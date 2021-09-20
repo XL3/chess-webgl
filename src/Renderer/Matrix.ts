@@ -1,4 +1,4 @@
-type Ortho_Tuple = {
+export type Ortho_Tuple = {
   left: number;
   right: number;
   top: number;
@@ -7,7 +7,12 @@ type Ortho_Tuple = {
   far: number;
 };
 
-export default class Matrix {
+export type Translate_Tuple = {
+  x: number,
+  y: number
+};
+
+export class Matrix {
   static identity: Float32Array = new Float32Array([
     1, 0, 0, 0,
     0, 1, 0, 0,
@@ -23,7 +28,7 @@ export default class Matrix {
   }
 
   static orthographic(tuple: Ortho_Tuple): Float32Array {
-    let {left, right, top, bottom, near, far} = tuple;
+    let { left, right, top, bottom, near, far } = tuple;
 
     // if (aspect_ratio > 1) {
     //   left *= aspect_ratio;
@@ -41,7 +46,7 @@ export default class Matrix {
     ]);
   }
 
-  static translate(t: { x: number, y: number }, mat: Float32Array = Matrix.identity): Float32Array {
+  static translate(t: Translate_Tuple, mat: Float32Array = Matrix.identity): Float32Array {
     let translated = mat;
     translated[3] = t.x;
     translated[7] = t.y;

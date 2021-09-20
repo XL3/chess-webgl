@@ -13,14 +13,22 @@ export enum Type {
   COUNT,
 }
 
+export enum Square_Augment {
+  blank,
+  dot,
+  outline,
+}
+
 export class Square {
   file: number;
   rank: number;
+  augment: Square_Augment;
 
   constructor(square: string = '') {
     if (square === '') {
-      square = 'A1';
+      square = 'a1';
     }
+    this.augment = Square_Augment.blank;
     this.fromString(square);
   }
 
@@ -30,7 +38,7 @@ export class Square {
   }
 
   fromString(square: string) {
-    this.file = square[0].charCodeAt(0) - 'A'.charCodeAt(0);
+    this.file = square[0].charCodeAt(0) - 'a'.charCodeAt(0);
     this.rank = square[1].charCodeAt(0) - '1'.charCodeAt(0);
   }
 
