@@ -81,7 +81,7 @@ export default class Chess {
                 case MouseEvent_Button.main:
                     const sq = this.renderer.findSquare(ev.offsetX, ev.offsetY);
                     const piece = this.findPiece(sq);
-                    if (piece) {
+                    if (piece && piece.color === this.renderer.turn) {
                         this.renderer.held_piece = piece;
                         this.renderer.held_at.x = ev.offsetX;
                         this.renderer.held_at.y = ev.offsetY;
