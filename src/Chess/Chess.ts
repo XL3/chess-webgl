@@ -43,25 +43,31 @@ export default class Chess {
         return piece;
     }
 
+    // @todo Add a square to piece map to make diagonal checks easier
+    isDiagonallyBlocked(piece: Piece): boolean {
+        return false;
+    }
+
+    isStrictlyLegal(sq: Square, taking?: Piece): boolean {
+        if (taking && taking.color === this.renderer.turn) return false;
+
+        return true;
+    }
+
     makeMove(sq: Square) {
-        // If a piece is held and a non-trivial move was made
         const hp = this.renderer.held_piece;
-        if (this.renderer.held_piece && !sq.compare(this.renderer.held_piece.square)) {
-            const taking = this.findPiece(sq);
-            const processMove = (take: boolean) => {
-                if (!hp.canMovePseudoLegal(sq)) return;
+        const taking = this.findPiece(sq);
 
-                if (take) this.takePiece(taking);
-                this.renderer.held_piece.square = sq;
+        // If a piece is held and a non-trivial move was made
+        if (this.renderer.held_piece && !sq.compare(hp.square)) {
+            if (hp.isPseudoLegal(sq) && this.isStrictlyLegal(sq, taking)) {
+                if (taking) this.takePiece(taking);
+
+                hp.square = sq;
                 setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
-            };
-
-            if (taking && taking.color != this.renderer.turn) {
-                processMove(true);
-            } else if (!taking) {
-                processMove(false);
             }
         }
+
         this.renderer.held_piece = undefined;
     }
 

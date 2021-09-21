@@ -60,14 +60,19 @@ export class Square {
         return coin;
     }
 
-    coincideDiagonally(sq: Square): boolean {
-        const main_diagonal = (sq: Square): Number => Math.abs(this.rank - this.file);
-        const sec_diagonal = (sq: Square): Number => this.rank + this.file;
+    static mainDiagonal(sq: Square): number {
+        return sq.rank - sq.file;
+    }
 
+    static secDiagonal(sq: Square): number {
+        return sq.rank + sq.file;
+    }
+
+    coincideDiagonally(sq: Square): boolean {
         let coin = false;
 
-        coin = coin || main_diagonal(this) === main_diagonal(sq);
-        coin = coin || sec_diagonal(this) === sec_diagonal(sq);
+        coin = coin || Square.mainDiagonal(this) === Square.mainDiagonal(sq);
+        coin = coin || Square.secDiagonal(this) === Square.secDiagonal(sq);
         return coin;
     }
 }
@@ -83,7 +88,7 @@ export class Piece {
         this.type = type;
     }
 
-    canMovePseudoLegal(sq: Square): boolean {
+    isPseudoLegal(sq: Square): boolean {
         switch (this.type) {
             case Type.King:
                 return this.processKing(sq);
