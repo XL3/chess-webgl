@@ -28,8 +28,14 @@ export class Square {
         if (square === '') {
             square = 'a1';
         }
-        this.augment = Square_Augment.blank;
         this.fromString(square);
+        this.augment = Square_Augment.blank;
+    }
+
+    static coordinatesToString(file: number, rank: number): string {
+        let f = 'a'.charCodeAt(0) + file;
+        let r = 1 + rank;
+        return `${String.fromCharCode(f)}${r}`;
     }
 
     fromCoordinates(file: number, rank: number) {
@@ -43,9 +49,7 @@ export class Square {
     }
 
     toString(): string {
-        let file = 'A'.charCodeAt(0) + this.file;
-        let rank = 1 + this.rank;
-        return `${String.fromCharCode(file)}${rank}`;
+        return Square.coordinatesToString(this.file, this.rank);
     }
 
     compare(sq: Square): boolean {
@@ -174,3 +178,5 @@ export class Piece {
         return `[${this.square}] ${Color[this.color]} ${Type[this.type]}`;
     }
 }
+
+export type Board = Record<string, Piece>;

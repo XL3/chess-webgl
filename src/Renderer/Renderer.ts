@@ -20,6 +20,7 @@ import {
     Color,
     Piece,
     Square_Augment,
+    Board
 } from "../Chess/Piece";
 
 export default class Renderer {
@@ -29,7 +30,7 @@ export default class Renderer {
     gl: WebGL2RenderingContext;
     canvas: HTMLCanvasElement;
     shader_program: WebGLShader;
-    pieces: Array<Piece[]>;
+    board: Board;
     turn: Color;
 
     uniforms: {
@@ -121,9 +122,9 @@ export default class Renderer {
         });
     }
 
-    drawPiece(piece: Piece) {
+    drawPiece(piece: Piece, sq: Square) {
         let t = this.held_piece && piece == this.held_piece ? this.held_at : null;
-        let model = this.prepareSquare(piece.square, t);
+        let model = this.prepareSquare(sq, t);
         this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
 
         this.matrices.model = model;
@@ -140,17 +141,15 @@ export default class Renderer {
         this.gl.clearColor(0, 0, 0, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-        let testaug = new Square('b3');
-        // testaug.augment = Square_Augment.dot;
-
-        this.drawBoard([testaug]);
-        for (let color of this.pieces) {
-            color
-                .filter(p => this.held_piece != p)
-                .forEach(p => this.drawPiece(p));
+        this.drawBoard([]);
+        for (let sq in this.board) {
+            const p = this.board[sq];
+            if (p && this.held_piece != p) {
+                this.drawPiece(p, p.square);
+            }
         }
         if (this.held_piece) {
-            this.drawPiece(this.held_piece);
+            this.drawPiece(this.held_piece, this.held_piece.square);
         }
 
         window.requestAnimationFrame(() => this.render());
@@ -288,7 +287,7 @@ export default class Renderer {
         return Math.min(width, height, Renderer.BOARD_SIZE);
     }
 
-    constructor(canvas: HTMLCanvasElement, pieces: Array<Piece[]>) {
+    constructor(canvas: HTMLCanvasElement, board: Board) {
         // Request WebGL context
         const gl = canvas.getContext("webgl2", {
             preserveDrawingBuffer: true,
@@ -309,7 +308,7 @@ export default class Renderer {
         this.canvas = canvas;
         this.dt = this.time_elapsed = this.last_update = 0;
 
-        this.pieces = pieces;
+        this.board = board;
         this.resize();
     }
 }

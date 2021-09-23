@@ -5,6 +5,7 @@ import {
     Type,
     Color,
     Piece,
+    Board
 } from "../Chess/Piece";
 
 enum MouseEvent_Button {
@@ -20,65 +21,73 @@ export default class Chess {
     canvas: HTMLCanvasElement;
 
     pieces: Array<Piece[]>;
+    board: Board;
 
     constructor() {
         // Create canvas
         const main = document.querySelector('#main');
         this.canvas = main.querySelector('#glCanvas');
-        this.placePieces();
 
-        this.renderer = new Renderer(this.canvas, this.pieces);
+        this.board = {};
+        this.renderer = new Renderer(this.canvas, this.board);
+
+        this.placePieces();
 
         // Add event handler
         window.onresize = () => this.renderer.resize();
     }
 
+    isBlocked(sq: Square): Piece {
+        const from_sq = this.renderer.held_piece.square;
 
-    findPiece(sq: Square): Piece {
-        const comp = (piece: Piece) => sq.compare(piece.square);
+        let dfile = sq.file - from_sq.file;
+        dfile /= Math.abs(dfile);
+        let drank = sq.rank - from_sq.rank;
+        drank /= Math.abs(drank);
 
-        let piece: Piece = this.pieces[Color.White].find(comp)
-            || this.pieces[Color.Black].find(comp);
+        for (let f = from_sq.file + dfile, r = from_sq.rank + drank;
+            f !== sq.file, r !== sq.rank; 
+            f += dfile, r += drank) {
 
-        return piece;
+            console.log(f, r);
+            if (this.board[Square.coordinatesToString(f, r)]) {
+                return this.board[Square.coordinatesToString(f, r)];
+            };
+        }
+
+        return null;
     }
 
-    // @todo Add a square to piece map to make diagonal checks easier
-    isDiagonallyBlocked(piece: Piece): boolean {
-        return false;
-    }
+    isStrictlyLegal(sq: Square): boolean {
+        // Path is blocked
+        if (this.isBlocked(sq)) return false;
 
-    isStrictlyLegal(sq: Square, taking?: Piece): boolean {
+        // Move takes a friendly piece
+        const taking = this.board[`${sq}`];
         if (taking && taking.color === this.renderer.turn) return false;
 
+        // Piece is pinned
         return true;
     }
 
     makeMove(sq: Square) {
         const hp = this.renderer.held_piece;
-        const taking = this.findPiece(sq);
 
         // If a piece is held and a non-trivial move was made
         if (this.renderer.held_piece && !sq.compare(hp.square)) {
-            if (hp.isPseudoLegal(sq) && this.isStrictlyLegal(sq, taking)) {
-                if (taking) this.takePiece(taking);
-
+            if (hp.isPseudoLegal(sq) && this.isStrictlyLegal(sq)) {
+                const key = `${hp.square}`;
                 hp.square = sq;
+
+                this.board[key] = null;
+                this.board[`${sq}`] = hp;
+
                 setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
             }
         }
 
         this.renderer.held_piece = undefined;
     }
-
-    takePiece(piece: Piece) {
-        // Same instance
-        const pred = p => piece == p;
-
-        let at = this.pieces[piece.color].findIndex(pred);
-        this.pieces[piece.color].splice(at, 1);
-    }
-
     setEventHandlers() {
         this.renderer.held_piece = undefined;
         this.renderer.held_at = { x: 0, y: 0 };
@@ -89,7 +98,8 @@ export default class Chess {
             switch (ev.button) {
                 case MouseEvent_Button.main:
                     const sq = this.renderer.findSquare(ev.offsetX, ev.offsetY);
-                    const piece = this.findPiece(sq);
+                    const piece = this.board[`${sq}`];
+
                     if (piece && piece.color === this.renderer.turn) {
                         this.renderer.held_piece = piece;
                         this.renderer.held_at.x = ev.offsetX;
@@ -121,47 +131,44 @@ export default class Chess {
     }
 
     placePieces() {
-        this.pieces = [new Array<Piece>(8), new Array<Piece>(8)];
-
         // Kings and Queens
-        this.pieces[Color.White][0] = new Piece('e1', Color.White, Type.King);
-        this.pieces[Color.White][1] = new Piece('d1', Color.White, Type.Queen);
+        this.board['e1'] = new Piece('e1', Color.White, Type.King);
+        this.board['d1'] = new Piece('d1', Color.White, Type.Queen);
 
-        this.pieces[Color.Black][0] = new Piece('e8', Color.Black, Type.King);
-        this.pieces[Color.Black][1] = new Piece('d8', Color.Black, Type.Queen);
+        this.board['e8'] = new Piece('e8', Color.Black, Type.King);
+        this.board['d8'] = new Piece('d8', Color.Black, Type.Queen);
 
 
         // Rooks
-        this.pieces[Color.White][2] = new Piece('h1', Color.White, Type.Rook);
-        this.pieces[Color.White][3] = new Piece('a1', Color.White, Type.Rook);
+        this.board['h1'] = new Piece('h1', Color.White, Type.Rook);
+        this.board['a1'] = new Piece('a1', Color.White, Type.Rook);
 
-        this.pieces[Color.Black][2] = new Piece('h8', Color.Black, Type.Rook);
-        this.pieces[Color.Black][3] = new Piece('a8', Color.Black, Type.Rook);
+        this.board['h8'] = new Piece('h8', Color.Black, Type.Rook);
+        this.board['a8'] = new Piece('a8', Color.Black, Type.Rook);
 
 
         // Knights
-        this.pieces[Color.White][4] = new Piece('g1', Color.White, Type.Knight);
-        this.pieces[Color.White][5] = new Piece('b1', Color.White, Type.Knight);
+        this.board['g1'] = new Piece('g1', Color.White, Type.Knight);
+        this.board['b1'] = new Piece('b1', Color.White, Type.Knight);
 
-        this.pieces[Color.Black][4] = new Piece('g8', Color.Black, Type.Knight);
-        this.pieces[Color.Black][5] = new Piece('b8', Color.Black, Type.Knight);
+        this.board['g8'] = new Piece('g8', Color.Black, Type.Knight);
+        this.board['b8'] = new Piece('b8', Color.Black, Type.Knight);
 
 
         // Bishops
-        this.pieces[Color.White][6] = new Piece('c1', Color.White, Type.Bishop);
-        this.pieces[Color.White][7] = new Piece('f1', Color.White, Type.Bishop);
+        this.board['c1'] = new Piece('c1', Color.White, Type.Bishop);
+        this.board['f1'] = new Piece('f1', Color.White, Type.Bishop);
 
-        this.pieces[Color.Black][6] = new Piece('c8', Color.Black, Type.Bishop);
-        this.pieces[Color.Black][7] = new Piece('f8', Color.Black, Type.Bishop);
+        this.board['c8'] = new Piece('c8', Color.Black, Type.Bishop);
+        this.board['f8'] = new Piece('f8', Color.Black, Type.Bishop);
 
         // Pawns
-        let pidx = 8;
-        for (let i = 0; i < 8; i++, pidx++) {
-            this.pieces[Color.White][pidx] = new Piece('', Color.White, Type.Pawn);
-            this.pieces[Color.White][pidx].square.fromCoordinates(i, 1);
+        for (let i = 0; i < 8; i++) {
+            let sq = Square.coordinatesToString(i, 1);
+            this.board[sq] = new Piece(sq, Color.White, Type.Pawn);
 
-            this.pieces[Color.Black][pidx] = new Piece('', Color.Black, Type.Pawn);
-            this.pieces[Color.Black][pidx].square.fromCoordinates(i, 6);
+            sq = Square.coordinatesToString(i, 6);
+            this.board[sq] = new Piece(sq, Color.Black, Type.Pawn);
         }
     }
 
@@ -169,9 +176,9 @@ export default class Chess {
         this.setEventHandlers();
 
         await this.renderer.init();
-        this.renderer.startRendering();
 
         this.renderer.turn = Color.White;
+        this.renderer.startRendering();
     }
 
 }
