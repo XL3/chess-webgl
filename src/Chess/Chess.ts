@@ -16,11 +16,16 @@ enum MouseEvent_Button {
     fifth, // Browser forward
 }
 
+type Move_Direction = {
+    file: number,
+    rank: number
+};
+
 export default class Chess {
     renderer: Renderer;
     canvas: HTMLCanvasElement;
 
-    pieces: Array<Piece[]>;
+    pieces: Piece[][][];
     board: Board;
 
     constructor() {
@@ -37,36 +42,118 @@ export default class Chess {
         window.onresize = () => this.renderer.resize();
     }
 
-    isBlocked(sq: Square): Piece {
-        const from_sq = this.renderer.held_piece.square;
+    getMoveDirection(from_sq: Square, to_sq: Square): Move_Direction {
+        let file = to_sq.file - from_sq.file;
+        file /= file !== 0 ? Math.abs(file) : 1;
+        let rank = to_sq.rank - from_sq.rank;
+        rank /= rank !== 0 ? Math.abs(rank): 1;
+        return { file, rank };
+    }
 
-        let dfile = sq.file - from_sq.file;
-        dfile /= Math.abs(dfile);
-        let drank = sq.rank - from_sq.rank;
-        drank /= Math.abs(drank);
+    isBlockedDiagonally(from_sq: Square, to_sq: Square): Piece {
+        let md = this.getMoveDirection(from_sq, to_sq);
 
-        for (let f = from_sq.file + dfile, r = from_sq.rank + drank;
-            f !== sq.file, r !== sq.rank; 
-            f += dfile, r += drank) {
+        // Not diagonally aligned
+        if (md.file * md.rank === 0) return null;
 
-            console.log(f, r);
-            if (this.board[Square.coordinatesToString(f, r)]) {
-                return this.board[Square.coordinatesToString(f, r)];
+        for (let f = from_sq.file + md.file, r = from_sq.rank + md.rank;
+            f !== to_sq.file && r !== to_sq.rank;
+            f += md.file, r += md.rank) {
+
+            const sq = Square.coordinatesToString(f, r);
+            if (this.board[sq]) {
+                return this.board[sq];
             };
         }
-
         return null;
     }
 
+    isBlockedLaterally(from_sq: Square, to_sq: Square): Piece {
+        let md = this.getMoveDirection(from_sq, to_sq);
+
+        // Not laterally aligned
+        if (md.file * md.rank !== 0) return null;
+
+        for (let f = from_sq.file + md.file, r = from_sq.rank + md.rank;
+            f !== to_sq.file || r !== to_sq.rank;
+            f += md.file, r += md.rank) {
+
+            const sq = Square.coordinatesToString(f, r);
+            if (this.board[sq]) {
+                return this.board[sq];
+            };
+        }
+        return null;
+    }
+
+    isBlocked(from_sq: Square, to_sq: Square): Piece {
+        const hp = this.renderer.held_piece;
+        if (hp.type === Type.Knight) return null;
+
+        return this.isBlockedDiagonally(from_sq, to_sq) || this.isBlockedLaterally(from_sq, to_sq);
+    }
+
+    isAlignedWithKing(attacking: Piece, pinned: Piece): boolean {
+        const king = this.pieces[this.renderer.turn][Type.King][0];
+        switch (attacking.type) {
+            case Type.Queen:
+                return this.isBlocked(attacking.square, king.square) == pinned;
+
+            case Type.Rook:
+                return this.isBlockedLaterally(attacking.square, king.square) == pinned;
+
+            case Type.Bishop:
+                return this.isBlockedDiagonally(attacking.square, king.square) == pinned;
+
+            default: return false;
+        }
+    }
+
+    isLegalCastle(sq: Square): boolean {
+        const hp = this.renderer.held_piece;
+        if (hp.type !== Type.King) return true;
+
+        const md = this.getMoveDirection(hp.square, sq);
+
+        // Beyond the board
+        const to_sq = sq;
+        to_sq.file += 5 * md.file;
+
+        const blocking = this.isBlockedLaterally(hp.square, to_sq);
+        return blocking && blocking.type === Type.Rook;
+    }
+
+    isLegalPawnCapture(sq: Square): boolean {
+        const hp = this.renderer.held_piece;
+        if (hp.type !== Type.Pawn) return true;
+
+        const taking = this.board[`${sq}`];
+        const md = this.getMoveDirection(hp.square, sq);
+        return !!taking || !taking && md.file === 0;
+    }
+
+
     isStrictlyLegal(sq: Square): boolean {
-        // Path is blocked
-        if (this.isBlocked(sq)) return false;
+        const hp = this.renderer.held_piece;
+        const opponent = this.pieces[1 - this.renderer.turn];
+        const taking = this.board[`${sq}`];
 
         // Move takes a friendly piece
-        const taking = this.board[`${sq}`];
         if (taking && taking.color === this.renderer.turn) return false;
 
+        // Path is blocked
+        if (this.isBlocked(this.renderer.held_piece.square, sq)) return false;
+
         // Piece is pinned
+        const isPinned = opponent.some(type => type.some(piece => this.isAlignedWithKing(piece, hp)));
+        if (isPinned) return false;
+
+        // Is not a legal castle
+        if (!this.isLegalCastle(sq)) return false;
+
+        // Is not a legal pawn capture
+        if (!this.isLegalPawnCapture(sq)) return false;
+
         return true;
     }
 
@@ -162,14 +249,27 @@ export default class Chess {
         this.board['c8'] = new Piece('c8', Color.Black, Type.Bishop);
         this.board['f8'] = new Piece('f8', Color.Black, Type.Bishop);
 
-        // Pawns
-        for (let i = 0; i < 8; i++) {
-            let sq = Square.coordinatesToString(i, 1);
-            this.board[sq] = new Piece(sq, Color.White, Type.Pawn);
+        // // Pawns
+        // for (let i = 0; i < 8; i++) {
+        //     let sq = Square.coordinatesToString(i, 1);
+        //     this.board[sq] = new Piece(sq, Color.White, Type.Pawn);
 
-            sq = Square.coordinatesToString(i, 6);
-            this.board[sq] = new Piece(sq, Color.Black, Type.Pawn);
-        }
+        //     sq = Square.coordinatesToString(i, 6);
+        //     this.board[sq] = new Piece(sq, Color.Black, Type.Pawn);
+        // }
+
+        this.pieces = [new Array<Piece[]>(Type.COUNT), new Array<Piece[]>(Type.COUNT)];
+        this.pieces[Color.White][Type.Queen] = [ this.board['d1'] ];
+        this.pieces[Color.Black][Type.Queen] = [ this.board['d8'] ];
+
+        this.pieces[Color.White][Type.King] = [ this.board['e1'] ]
+        this.pieces[Color.Black][Type.King] = [ this.board['e8'] ];
+
+        this.pieces[Color.White][Type.Rook] = [ this.board['a1'], this.board['h1'] ];
+        this.pieces[Color.Black][Type.Rook] = [ this.board['a8'], this.board['h8'] ];
+
+        this.pieces[Color.White][Type.Bishop] = [ this.board['c1'], this.board['f1'] ];
+        this.pieces[Color.Black][Type.Bishop] = [ this.board['c8'], this.board['f8'] ];
     }
 
     async init() {
