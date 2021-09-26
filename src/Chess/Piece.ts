@@ -24,6 +24,10 @@ export class Square {
     rank: number;
     augment: Square_Augment;
 
+    get idx() {
+        return Square.coordinatesToIndex(this.file, this.rank);
+    }
+
     constructor(square: string = '') {
         if (square === '') {
             square = 'a1';
@@ -36,6 +40,17 @@ export class Square {
         let f = 'a'.charCodeAt(0) + file;
         let r = 1 + rank;
         return `${String.fromCharCode(f)}${r}`;
+    }
+
+    static stringToIndex(square: string): number {
+        let file = square[0].charCodeAt(0) - 'a'.charCodeAt(0);
+        let rank = square[1].charCodeAt(0) - '1'.charCodeAt(0);
+
+        return Square.coordinatesToIndex(file, rank);
+    }
+
+    static coordinatesToIndex(file: number, rank: number): number {
+        return file * 8 + rank;
     }
 
     fromCoordinates(file: number, rank: number) {
@@ -147,7 +162,7 @@ export class Piece {
         for (let i = 0; i < drank.length; i++) {
             coin = (sq.rank - this.square.rank) == drank[i];
             coin = coin && (sq.file - this.square.file) === dfile[i];
-            
+
             if (coin) return true;
         }
         return false;
@@ -166,8 +181,8 @@ export class Piece {
 
         // Initial advance
         coin = coin || (this.square.rank === starting && sq.rank === starting + 2 * direction);
-        coin = coin 
-            || ((sq.rank - this.square.rank === direction) 
+        coin = coin
+            || ((sq.rank - this.square.rank === direction)
                 && (Math.abs(sq.file - this.square.file) <= 1));
 
         // Other advances
@@ -179,4 +194,4 @@ export class Piece {
     }
 }
 
-export type Board = Record<string, Piece>;
+export type Board = Array<Piece>;

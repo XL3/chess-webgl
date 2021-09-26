@@ -145,8 +145,7 @@ export default class Renderer {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
         this.drawBoard([]);
-        for (let sq in this.board) {
-            const p = this.board[sq];
+        for (let p of this.board) {
             if (p && this.held_piece != p) {
                 this.drawPiece(p, p.square);
             }
