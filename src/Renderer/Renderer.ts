@@ -65,11 +65,13 @@ export default class Renderer {
 
     findSquare(x: number, y: number): Square {
         const dim = Renderer.getMinimumDimension();
-        const file = Math.floor(8 * x / dim);
 
         // Board starts at bottom
         let rank = Math.floor(8 * y / dim);
         rank = this.turn == Color.White ? 7 - rank : rank;
+
+        let file = Math.floor(8 * x / dim);
+        file = this.turn == Color.Black ? 7 - file: file;
 
         const sq = new Square();
         sq.fromCoordinates(file, rank);
@@ -91,6 +93,7 @@ export default class Renderer {
             translate.y += Renderer.SQUARE_SIZE * (sq.rank + 0.5);
             if (this.turn == Color.Black) {
                 translate.y = -translate.y;
+                translate.x = -translate.x;
             }
         }
 
