@@ -13,16 +13,21 @@ export enum Type {
     COUNT,
 }
 
-export enum Square_Augment {
+export enum Augment {
     blank,
     dot,
     outline,
 }
 
+export type Augment_Square = {
+    file: number,
+    rank: number,
+    augment: Augment
+}
+
 export class Square {
     file: number;
     rank: number;
-    augment: Square_Augment;
 
     get idx() {
         return Square.coordinatesToIndex(this.file, this.rank);
@@ -33,7 +38,6 @@ export class Square {
             square = 'a1';
         }
         this.fromString(square);
-        this.augment = Square_Augment.blank;
     }
 
     static coordinatesToString(file: number, rank: number): string {
@@ -68,6 +72,7 @@ export class Square {
     }
 
     compare(sq: Square): boolean {
+        if (!sq) return false;
         return this.file === sq.file && this.rank === sq.rank;
     }
 

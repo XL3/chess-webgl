@@ -5,7 +5,8 @@ import {
     Type,
     Color,
     Piece,
-    Board
+    Board,
+    Augment
 } from "../Chess/Piece";
 
 import csq from "./Chess_Squares";
@@ -150,7 +151,7 @@ export default class Chess {
         // En peasant
         if (!taking && md.file !== 0) {
             const peasant = this.board[Square.coordinatesToIndex(sq.file, sq.rank - md.rank)];
-            return !!peasant;
+            return !!peasant && peasant.square.compare(this.last_advance);
         }
 
         return !!taking;
@@ -231,7 +232,7 @@ export default class Chess {
 
         if (this.renderer.turn === Color.White && sq.rank === 5 || this.renderer.turn === Color.Black && sq.rank === 1) {
             const taking = this.board[id];
-            if (taking.square === this.last_advance) {
+            if (taking.square.compare(this.last_advance)) {
                 this.board[id] = null;
             }
         }
@@ -243,6 +244,27 @@ export default class Chess {
 
         this.board[key] = null;
         this.board[to_sq.idx] = piece;
+    }
+
+    getAllLegalMoves(): Square[] {
+        const hp = this.renderer.held_piece;
+
+        const legal: Array<Square> = [];
+
+        for (let file = 0; file < 8; file++) {
+            for (let rank = 0; rank < 8; rank++) {
+                const sq = new Square;
+                sq.fromCoordinates(file, rank);
+
+                // No move
+                if (sq.compare(hp.square)) continue;
+
+                if (hp.isPseudoLegal(sq) && this.isStrictlyLegal(hp, sq)) {
+                    legal.push(sq);
+                }
+            }
+        }
+        return legal;
     }
 
     makeMoveIfLegal(sq: Square) {
@@ -267,6 +289,7 @@ export default class Chess {
             }
         }
 
+        this.renderer.augments = [];
         this.renderer.held_piece = undefined;
     }
     setEventHandlers() {
@@ -285,6 +308,13 @@ export default class Chess {
                         this.renderer.held_piece = piece;
                         this.renderer.held_at.x = ev.offsetX;
                         this.renderer.held_at.y = ev.offsetY;
+
+                        const legal = this.getAllLegalMoves();
+                        this.renderer.augments = legal.map(move => ({
+                            file: move.file,
+                            rank: move.rank,
+                            augment: this.board[move.idx] ? Augment.outline: Augment.dot
+                        }));
                     }
                     break;
 

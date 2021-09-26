@@ -19,7 +19,8 @@ import {
     Type,
     Color,
     Piece,
-    Square_Augment,
+    Augment_Square,
+    Augment,
     Board
 } from "../Chess/Piece";
 
@@ -32,6 +33,7 @@ export default class Renderer {
     shader_program: WebGLShader;
     board: Board;
     turn: Color;
+    augments: Augment_Square[];
 
     uniforms: {
         projection: WebGLUniformLocation,
@@ -71,7 +73,7 @@ export default class Renderer {
         rank = this.turn == Color.White ? 7 - rank : rank;
 
         let file = Math.floor(8 * x / dim);
-        file = this.turn == Color.Black ? 7 - file: file;
+        file = this.turn == Color.Black ? 7 - file : file;
 
         const sq = new Square();
         sq.fromCoordinates(file, rank);
@@ -79,7 +81,7 @@ export default class Renderer {
         return sq;
     }
 
-    prepareSquare(sq: Square, t: Translate_Tuple = null): Float32Array {
+    prepareSquare(sq: Augment_Square, t: Translate_Tuple = null): Float32Array {
         // Offset to lower left square
         let translate = { x: -4 * Renderer.SQUARE_SIZE, y: -4 * Renderer.SQUARE_SIZE };
 
@@ -91,6 +93,7 @@ export default class Renderer {
             // Offset to middle of lower left square
             translate.x += Renderer.SQUARE_SIZE * (sq.file + 0.5);
             translate.y += Renderer.SQUARE_SIZE * (sq.rank + 0.5);
+
             if (this.turn == Color.Black) {
                 translate.y = -translate.y;
                 translate.x = -translate.x;
@@ -102,7 +105,7 @@ export default class Renderer {
         return model;
     }
 
-    drawBoard(augments: Square[]) {
+    drawBoard(augments: Augment_Square[]) {
         this.matrices.model = Matrix.scale(Renderer.BOARD_SIZE);
 
         this.textures.board[this.turn].bind(0, this.uniforms.texture_sampler);
@@ -112,10 +115,10 @@ export default class Renderer {
         augments.forEach(augment => {
             this.matrices.model = this.prepareSquare(augment);
             switch (augment.augment) {
-                case Square_Augment.dot:
+                case Augment.dot:
                     this.textures.dot.bind(0, this.uniforms.texture_sampler);
                     break;
-                case Square_Augment.outline:
+                case Augment.outline:
                     this.textures.outline.bind(0, this.uniforms.texture_sampler);
                     break;
                 default: return;
@@ -127,7 +130,9 @@ export default class Renderer {
 
     drawPiece(piece: Piece, sq: Square) {
         let t = this.held_piece && piece == this.held_piece ? this.held_at : null;
-        let model = this.prepareSquare(sq, t);
+
+        const asq: Augment_Square = { file: sq.file, rank: sq.rank, augment: null };
+        let model = this.prepareSquare(asq, t);
         this.textures.pieces[piece.color][piece.type].bind(0, this.uniforms.texture_sampler);
 
         this.matrices.model = model;
@@ -144,7 +149,7 @@ export default class Renderer {
         this.gl.clearColor(0, 0, 0, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-        this.drawBoard([]);
+        this.drawBoard(this.augments);
         for (let p of this.board) {
             if (p && this.held_piece != p) {
                 this.drawPiece(p, p.square);
@@ -309,6 +314,7 @@ export default class Renderer {
         this.gl = gl;
         this.canvas = canvas;
         this.dt = this.time_elapsed = this.last_update = 0;
+        this.augments = [];
 
         this.board = board;
         this.resize();
