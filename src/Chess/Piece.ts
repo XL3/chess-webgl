@@ -179,19 +179,22 @@ export class Piece {
         return this.square.coincideLaterally(sq);
     }
     processPawn(sq: Square): boolean {
-        let coin = false;
         // White pawns advance forward in ranks
         let direction = this.color === Color.White ? 1 : -1;
         let starting = this.color === Color.White ? 1 : 6;
 
-        // Initial advance
-        coin = coin || (this.square.rank === starting && sq.rank === starting + 2 * direction);
-        coin = coin
-            || ((sq.rank - this.square.rank === direction)
-                && (Math.abs(sq.file - this.square.file) <= 1));
+        const isStartingAdvance = (sq: Square) => this.square.rank === starting && sq.rank === starting + 2 * direction;
+        const isNormalAdvance = (sq: Square) => sq.rank - this.square.rank === direction;
+
+        const isLegal = (sq: Square) => Math.abs(sq.file - this.square.file) <= 1;
+        const isCapture = (sq: Square) => Math.abs(sq.file - this.square.file) === 1;
+
+        let coin = false;
+        coin = coin || isStartingAdvance(sq) && !isCapture(sq);
+        coin = coin || isNormalAdvance(sq);
 
         // Other advances
-        return coin;
+        return coin && isLegal(sq);
     }
 
     toString(): string {
