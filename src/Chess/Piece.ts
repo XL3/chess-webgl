@@ -34,7 +34,7 @@ export class Square {
     }
 
     constructor(square: string = '') {
-        if (square === '') {
+        if (square == '') {
             square = 'a1';
         }
         this.fromString(square);
@@ -73,14 +73,14 @@ export class Square {
 
     compare(sq: Square): boolean {
         if (!sq) return false;
-        return this.file === sq.file && this.rank === sq.rank;
+        return this.file == sq.file && this.rank == sq.rank;
     }
 
     coincideLaterally(sq: Square): boolean {
         let coin = false;
 
-        coin = coin || this.file === sq.file;
-        coin = coin || this.rank === sq.rank;
+        coin = coin || this.file == sq.file;
+        coin = coin || this.rank == sq.rank;
         return coin;
     }
 
@@ -95,8 +95,8 @@ export class Square {
     coincideDiagonally(sq: Square): boolean {
         let coin = false;
 
-        coin = coin || Square.mainDiagonal(this) === Square.mainDiagonal(sq);
-        coin = coin || Square.secDiagonal(this) === Square.secDiagonal(sq);
+        coin = coin || Square.mainDiagonal(this) == Square.mainDiagonal(sq);
+        coin = coin || Square.secDiagonal(this) == Square.secDiagonal(sq);
         return coin;
     }
 }
@@ -139,15 +139,15 @@ export class Piece {
 
         // White
         // On first rank
-        if (this.color === Color.White && this.square.rank === 0) {
-            if (df(sq) === 2)
+        if (this.color == Color.White && this.square.rank == 0) {
+            if (df(sq) == 2)
                 return true;
         }
 
         // Black
         // On eighth rank
-        if (this.color === Color.Black && this.square.rank === 7) {
-            if (df(sq) === 2)
+        if (this.color == Color.Black && this.square.rank == 7) {
+            if (df(sq) == 2)
                 return true;
         }
 
@@ -166,7 +166,7 @@ export class Piece {
 
         for (let i = 0; i < drank.length; i++) {
             coin = (sq.rank - this.square.rank) == drank[i];
-            coin = coin && (sq.file - this.square.file) === dfile[i];
+            coin = coin && (sq.file - this.square.file) == dfile[i];
 
             if (coin) return true;
         }
@@ -180,14 +180,14 @@ export class Piece {
     }
     processPawn(sq: Square): boolean {
         // White pawns advance forward in ranks
-        let direction = this.color === Color.White ? 1 : -1;
-        let starting = this.color === Color.White ? 1 : 6;
+        let direction = this.color == Color.White ? 1 : -1;
+        let starting = this.color == Color.White ? 1 : 6;
 
-        const isStartingAdvance = (sq: Square) => this.square.rank === starting && sq.rank === starting + 2 * direction;
-        const isNormalAdvance = (sq: Square) => sq.rank - this.square.rank === direction;
+        const isStartingAdvance = (sq: Square) => this.square.rank == starting && sq.rank == starting + 2 * direction;
+        const isNormalAdvance = (sq: Square) => sq.rank - this.square.rank == direction;
 
         const isLegal = (sq: Square) => Math.abs(sq.file - this.square.file) <= 1;
-        const isCapture = (sq: Square) => Math.abs(sq.file - this.square.file) === 1;
+        const isCapture = (sq: Square) => Math.abs(sq.file - this.square.file) == 1;
 
         let coin = false;
         coin = coin || isStartingAdvance(sq) && !isCapture(sq);

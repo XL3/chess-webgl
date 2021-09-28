@@ -54,9 +54,9 @@ export default class Chess {
 
     getMoveDirection(from_sq: Square, to_sq: Square): Move {
         let file = to_sq.file - from_sq.file;
-        file /= file !== 0 ? Math.abs(file) : 1;
+        file /= file != 0 ? Math.abs(file) : 1;
         let rank = to_sq.rank - from_sq.rank;
-        rank /= rank !== 0 ? Math.abs(rank) : 1;
+        rank /= rank != 0 ? Math.abs(rank) : 1;
         return { file, rank };
     }
 
@@ -67,25 +67,28 @@ export default class Chess {
     }
 
     getBlockingPiece(from_sq: Square, to_sq: Square, md: Move, cmp: Square_Compare): Piece {
-        for (let f = from_sq.file + md.file, r = from_sq.rank + md.rank;
+        let f: number, r: number;
+        const cti = Square.coordinatesToIndex;
+
+        for (f = from_sq.file + md.file, r = from_sq.rank + md.rank;
             cmp(f, r, to_sq.file, to_sq.rank);
             f += md.file, r += md.rank) {
 
-            const sq = Square.coordinatesToIndex(f, r);
-            if (this.board[sq]) {
-                return this.board[sq];
+            if (this.board[cti(f, r)]) {
+                return this.board[cti(f, r)];
             };
         }
-        return null;
+        return this.board[cti(f, r)];
     }
 
     isBlockedDiagonally(from_sq: Square, to_sq: Square): Piece {
         let md = this.getMoveDirection(from_sq, to_sq);
 
         // Not diagonally aligned
-        if (md.file * md.rank === 0) return null;
+        if (md.file * md.rank == 0) return null;
 
-        const comparator = (f: number, r: number, ff: number, rf: number) => f !== ff && r !== rf;
+        // @todo Clean this up
+        const comparator = (f: number, r: number, ff: number, rf: number) => f != ff || r != rf;
         return this.getBlockingPiece(from_sq, to_sq, md, comparator);
     }
 
@@ -93,13 +96,14 @@ export default class Chess {
         let md = this.getMoveDirection(from_sq, to_sq);
 
         // Not laterally aligned
-        if (md.file * md.rank !== 0) return null;
+        if (md.file * md.rank != 0) return null;
 
-        const comparator = (f: number, r: number, ff: number, rf: number) => f !== ff || r !== rf;
+        const comparator = (f: number, r: number, ff: number, rf: number) => f != ff || r != rf;
         return this.getBlockingPiece(from_sq, to_sq, md, comparator);
     }
 
     isBlocked(piece: Piece, from_sq: Square, to_sq: Square): Piece {
+        if (!piece) return null;
         switch (piece.type) {
             case Type.Queen:
             case Type.King:
@@ -116,8 +120,19 @@ export default class Chess {
         }
     }
 
-    isAlignedWithKing(attacking: Piece, pinned: Piece): boolean {
-        return this.isBlocked(attacking, attacking.square, this.king.square) == pinned;
+    isAlignedWithKing(attacking: Piece): boolean {
+        switch (attacking.type) {
+            case Type.Queen:
+            case Type.King:
+            case Type.Rook:
+            case Type.Bishop:
+                return this.isBlocked(attacking, attacking.square, this.king.square) == this.king;
+
+            // @todo Add Pawn and Knight ranges
+            case Type.Pawn:
+            case Type.Knight:
+                return false;
+        }
     }
 
     getFurthestPiece(from_sq: Square, to_sq: Square): Piece {
@@ -132,30 +147,30 @@ export default class Chess {
 
     isLegalCastle(piece: Piece, sq: Square): boolean {
         // Not a king, any move is valid
-        if (piece.type !== Type.King) return true;
+        if (piece.type != Type.King) return true;
 
         // Normal move
         const mag = this.getMoveMagnitude(piece.square, sq);
         if (mag.file < 2) return true;
 
         const blocking = this.getFurthestPiece(piece.square, sq);
-        return blocking && blocking.type === Type.Rook;
+        return blocking && blocking.type == Type.Rook;
     }
 
     isLegalPawnCapture(piece: Piece, sq: Square): boolean {
-        if (piece.type !== Type.Pawn) return true;
+        if (piece.type != Type.Pawn) return true;
 
         const taking = this.board[sq.idx];
         const md = this.getMoveDirection(piece.square, sq);
 
         // Pawns cannot capture forwards
-        if (taking && md.file === 0) return false;
+        if (taking && md.file == 0) return false;
 
         // Trivial move
-        if (!taking && md.file === 0) return true;
+        if (!taking && md.file == 0) return true;
 
         // En peasant
-        if (!taking && md.file !== 0) {
+        if (!taking && md.file != 0) {
             const peasant = this.board[Square.coordinatesToIndex(sq.file, sq.rank - md.rank)];
             return !!peasant && peasant.square.compare(this.last_advance);
         }
@@ -165,12 +180,13 @@ export default class Chess {
 
     getPinningPiece(pinned: Piece): Piece {
         const opponent = this.pieces[1 - this.renderer.turn];
+        const pinnedToKingBy = (p: Piece) => this.getPinnedPiece(p) == pinned;
 
         for (let type of opponent) {
             if (!type) continue;
             for (let pinning of type) {
-                if (!pinning || pinning.type === Type.King) continue;
-                if (this.isAlignedWithKing(pinning, pinned)) return pinning;
+                if (!pinning || pinning.type == Type.King) continue;
+                if (pinnedToKingBy(pinning)) return pinning;
             }
         }
         return null;
@@ -180,29 +196,43 @@ export default class Chess {
         return this.isBlocked(pinning, pinning.square, this.king.square);
     }
 
-    movesOutOfPin(piece: Piece, sq: Square): boolean {
-        // Move is essentially valid, unless it moves out of pin
-        // So we simulate making the move and see if everything works
-        const pinning = this.getPinningPiece(piece);
-        if (!pinning) return false;
+    isInCheck(): boolean {
+        const opponent = this.pieces[1 - this.renderer.turn];
 
+        for (let type of opponent) {
+            if (!type) continue;
+            for (let attacking of type) {
+                if (!attacking) continue;
+                if (this.isAlignedWithKing(attacking)) {
+                    console.log(attacking);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    stepsIntoCheck(piece: Piece): boolean {
+        // Move is essentially valid, unless it steps into check
+        // by moving a pinned piece or moving the king into a state where he's checked
+        // So we simulate making the move and see if everything works
         const old_sq = piece.square;
         this.board[old_sq.idx] = null;
 
-        const replacement = this.getPinnedPiece(pinning);
+        const in_check = this.isInCheck();
         this.board[old_sq.idx] = piece;
 
-        return !replacement;
+        return in_check;
     }
 
     isStrictlyLegal(piece: Piece, sq: Square): boolean {
         const taking = this.board[sq.idx];
 
         // Move takes a friendly piece
-        if (taking && taking.color === this.renderer.turn) return false;
+        if (taking && taking.color == this.renderer.turn) return false;
 
         // Path is blocked
-        if (this.isBlocked(piece, piece.square, sq)) return false;
+        if (this.isBlocked(piece, piece.square, sq) != taking) return false;
 
         // Is not a legal castle
         if (!this.isLegalCastle(piece, sq)) return false;
@@ -210,8 +240,8 @@ export default class Chess {
         // Is not a legal pawn capture
         if (!this.isLegalPawnCapture(piece, sq)) return false;
 
-        // Piece is pinned
-        if (this.movesOutOfPin(piece, sq)) return false;
+        // Moves king into check
+        if (this.stepsIntoCheck(piece)) return false;
         return true;
     }
 
@@ -234,9 +264,9 @@ export default class Chess {
         const id = Square.coordinatesToIndex(sq.file, sq.rank - md.rank);
 
         // Trivial pawn move
-        if (md.file === 0) return;
+        if (md.file == 0) return;
 
-        if (this.renderer.turn === Color.White && sq.rank === 5 || this.renderer.turn === Color.Black && sq.rank === 1) {
+        if (this.renderer.turn == Color.White && sq.rank == 5 || this.renderer.turn == Color.Black && sq.rank == 1) {
             const taking = this.board[id];
             if (taking && taking.square.compare(this.last_advance)) {
                 this.board[id] = null;
@@ -252,9 +282,7 @@ export default class Chess {
         this.board[to_sq.idx] = piece;
     }
 
-    getAllLegalMoves(): Square[] {
-        const hp = this.renderer.held_piece;
-
+    getAllLegalMoves(piece: Piece): Square[] {
         const legal: Array<Square> = [];
 
         for (let file = 0; file < 8; file++) {
@@ -263,9 +291,9 @@ export default class Chess {
                 sq.fromCoordinates(file, rank);
 
                 // No move
-                if (sq.compare(hp.square)) continue;
+                if (sq.compare(piece.square)) continue;
 
-                if (hp.isPseudoLegal(sq) && this.isStrictlyLegal(hp, sq)) {
+                if (piece.isPseudoLegal(sq) && this.isStrictlyLegal(piece, sq)) {
                     legal.push(sq);
                 }
             }
@@ -273,29 +301,42 @@ export default class Chess {
         return legal;
     }
 
-    makeMoveIfLegal(sq: Square) {
-        const hp = this.renderer.held_piece;
-
-        if (!hp || sq.compare(hp.square)) return;
+    makeMoveIfLegal(piece: Piece, sq: Square) {
+        if (!piece || sq.compare(piece.square)) return;
         // If a piece is held and a non-trivial move was made
 
-        if (!hp.isPseudoLegal(sq) || !this.isStrictlyLegal(hp, sq)) return;
+        if (!piece.isPseudoLegal(sq) || !this.isStrictlyLegal(piece, sq)) return;
         // If a legal move was made
 
-        if (hp.type === Type.King) {
-            this.makeCastleMove(hp, sq);
+        if (piece.type == Type.King) {
+            this.makeCastleMove(piece, sq);
         }
 
-        if (hp.type === Type.Pawn) {
-            this.takeEnPeasant(hp, sq);
+        if (piece.type == Type.Pawn) {
+            this.takeEnPeasant(piece, sq);
             this.last_advance = sq;
         } else {
             this.last_advance = null;
         }
 
-        this.movePiece(hp, sq);
-        setTimeout(() => this.renderer.turn = 1 - this.renderer.turn, 225);
+        this.movePiece(piece, sq);
+        setTimeout(() => this.verifyCheck(piece), 225);
     }
+
+    verifyCheck(piece: Piece) {
+        this.renderer.turn = 1 - this.renderer.turn;
+        const player = this.pieces[this.renderer.turn];
+
+        const in_check = this.isInCheck();
+        if (in_check) {
+            const has_moves = player.some(type => type.some(piece => this.getAllLegalMoves(piece).length > 0));
+            if (has_moves) {
+                const checkmate = new Event('checkmate');
+                document.dispatchEvent(checkmate);
+            }
+        }
+    }
+
 
     setEventHandlers() {
         this.renderer.held_piece = undefined;
@@ -309,17 +350,18 @@ export default class Chess {
                     const sq = this.renderer.findSquare(ev.offsetX, ev.offsetY);
                     const piece = this.board[sq.idx];
 
-                    if (piece && piece.color === this.renderer.turn) {
-                        this.renderer.held_piece = piece;
-                        this.renderer.held_at.x = ev.offsetX;
-                        this.renderer.held_at.y = ev.offsetY;
-
-                        const legal = this.getAllLegalMoves();
+                    if (piece && piece.color == this.renderer.turn) {
+                        const legal = this.getAllLegalMoves(piece);
+                        if (!legal.length) return;
                         this.renderer.augments = legal.map(move => ({
                             file: move.file,
                             rank: move.rank,
                             augment: this.board[move.idx] ? Augment.outline : Augment.dot
                         }));
+
+                        this.renderer.held_piece = piece;
+                        this.renderer.held_at.x = ev.offsetX;
+                        this.renderer.held_at.y = ev.offsetY;
                     }
                     break;
 
@@ -342,8 +384,11 @@ export default class Chess {
         }
 
         this.canvas.onmouseup = (ev: MouseEvent) => {
+            const hp = this.renderer.held_piece;
+            if (!hp) return;
+
             const sq = this.renderer.findSquare(ev.offsetX, ev.offsetY);
-            this.makeMoveIfLegal(sq);
+            this.makeMoveIfLegal(hp, sq);
             this.dropPiece();
         }
     }
@@ -387,16 +432,21 @@ export default class Chess {
         this.board[csq.c8] = new Piece('c8', Color.Black, Type.Bishop);
         this.board[csq.f8] = new Piece('f8', Color.Black, Type.Bishop);
 
+        this.pieces = [new Array<Piece[]>(Type.COUNT), new Array<Piece[]>(Type.COUNT)];
+        this.pieces[Color.White][Type.Pawn] = [];
+        this.pieces[Color.Black][Type.Pawn] = [];
+
         // Pawns
         for (let i = 0; i < 8; i++) {
             let sq = Square.coordinatesToString(i, 1);
             this.board[cti(i, 1)] = new Piece(sq, Color.White, Type.Pawn);
+            this.pieces[Color.White][Type.Pawn].push(this.board[cti(i, 1)]);
 
             sq = Square.coordinatesToString(i, 6);
             this.board[cti(i, 6)] = new Piece(sq, Color.Black, Type.Pawn);
+            this.pieces[Color.Black][Type.Pawn].push(this.board[cti(i, 6)]);
         }
 
-        this.pieces = [new Array<Piece[]>(Type.COUNT), new Array<Piece[]>(Type.COUNT)];
         this.pieces[Color.White][Type.Queen] = [this.board[csq.d1]];
         this.pieces[Color.Black][Type.Queen] = [this.board[csq.d8]];
 
@@ -408,6 +458,9 @@ export default class Chess {
 
         this.pieces[Color.White][Type.Bishop] = [this.board[csq.c1], this.board[csq.f1]];
         this.pieces[Color.Black][Type.Bishop] = [this.board[csq.c8], this.board[csq.f8]];
+
+        this.pieces[Color.White][Type.Knight] = [this.board[csq.b1], this.board[csq.g1]];
+        this.pieces[Color.Black][Type.Knight] = [this.board[csq.b8], this.board[csq.g8]];
     }
 
     async init() {
