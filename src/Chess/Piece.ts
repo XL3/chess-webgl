@@ -29,7 +29,7 @@ export class Square {
     file: number;
     rank: number;
 
-    get idx() {
+    get i() {
         return Square.coordinatesToIndex(this.file, this.rank);
     }
 
@@ -134,7 +134,10 @@ export class Piece {
 
     processKing(sq: Square): boolean {
         const df = (sq: Square) => Math.abs(this.square.file - sq.file);
-        if (df(sq) <= 1 && Math.abs(this.square.rank - sq.rank) <= 1)
+        const dr = (sq: Square) => Math.abs(this.square.rank - sq.rank);
+        if (dr(sq) > 1) return false;
+
+        if (df(sq) <= 1)
             return true;
 
         // White
