@@ -4,7 +4,8 @@
   "description": "Chess in WebGL",
   "scripts": {
     "start": "parcel serve index.html",
-    "build": "parcel build index.html --public-url ."
+    "build": "parcel build index.html --public-url .",
+    "deploy": "pwsh deploy.sh"
   },
   "repository": {
     "type": "git",
