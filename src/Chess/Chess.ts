@@ -56,13 +56,13 @@ export default class Chess {
         file /= file != 0 ? Math.abs(file) : 1;
         let rank = to_sq.rank - from_sq.rank;
         rank /= rank != 0 ? Math.abs(rank) : 1;
-        return {file, rank};
+        return { file, rank };
     }
 
     getMoveMagnitude(from_sq: Square, to_sq: Square): Move {
         let file = to_sq.file - from_sq.file;
         let rank = to_sq.rank - from_sq.rank;
-        return {file: Math.abs(file), rank: Math.abs(rank)};
+        return { file: Math.abs(file), rank: Math.abs(rank) };
     }
 
     getBlockingPiece(from_sq: Square, to_sq: Square, md: Move): Piece {
@@ -70,8 +70,8 @@ export default class Chess {
         const cti = Square.coordinatesToIndex;
 
         for (f = from_sq.file + md.file, r = from_sq.rank + md.rank;
-             f != to_sq.file || r != to_sq.rank;
-             f += md.file, r += md.rank) {
+            f != to_sq.file || r != to_sq.rank;
+            f += md.file, r += md.rank) {
 
             if (this.board[cti(f, r)]) {
                 return this.board[cti(f, r)];
@@ -83,8 +83,8 @@ export default class Chess {
     getRookInDirection(piece: Piece, sq: Square): Piece {
         // Check each rook
         const [long, short] = this.pieces[piece.color][Type.Rook];
-        const {file: short_file} = this.getMoveDirection(piece.square, short.square);
-        const {file} = this.getMoveDirection(piece.square, sq);
+        const { file: short_file } = this.getMoveDirection(piece.square, short.square);
+        const { file } = this.getMoveDirection(piece.square, sq);
         return short_file == file ? short : long;
     }
 
@@ -116,6 +116,7 @@ export default class Chess {
 
         switch (piece.type) {
             case Type.Queen:
+            case Type.Pawn:
                 return this.getBlockingPiece(from_sq, to_sq, md);
 
             case Type.Rook:
@@ -129,7 +130,6 @@ export default class Chess {
                 return null;
 
             default:
-                // @note Pawns just move forwards
                 return this.board[to_sq.i];
         }
     }
@@ -162,9 +162,13 @@ export default class Chess {
         // Trivial move
         if (!taking && md.file == 0) return true;
 
+        const single_advance_b = this.renderer.turn == Color.Black && sq.rank == 2;
+        const single_advance_w = this.renderer.turn == Color.White && sq.rank == 5;
+
         // En peasant
-        if (!taking && md.file != 0) {
-            const peasant = this.board[Square.coordinatesToIndex(sq.file, sq.rank - md.rank)];
+        if (!taking && md.file != 0 && (single_advance_b || single_advance_w)) {
+            const i = Square.coordinatesToIndex(sq.file, sq.rank - md.rank);
+            const peasant = this.board[i];
             return !!peasant && peasant.square.compare(this.just_advanced);
         }
         return !!taking;
@@ -183,7 +187,7 @@ export default class Chess {
         for (let type of opponent) {
             if (!type) continue;
             for (let attacking of type) {
-                if (!attacking || attacking == piece) continue;
+                if (!attacking || attacking.taken || attacking == piece) continue;
                 if (attacking.isPseudoLegal(this.king.square)) {
                     if (this.isStrictlyLegal(attacking, this.king.square)) {
                         return true;
@@ -251,7 +255,7 @@ export default class Chess {
         if (md.file == 0) return;
 
         const single_advance_w = this.renderer.turn == Color.White && sq.rank == 5;
-        const single_advance_b = this.renderer.turn == Color.Black && sq.rank == 1;
+        const single_advance_b = this.renderer.turn == Color.Black && sq.rank == 2;
 
         if (single_advance_w || single_advance_b) {
             const i = Square.coordinatesToIndex(sq.file, sq.rank - md.rank);
@@ -325,9 +329,13 @@ export default class Chess {
         }
 
         const replaced = this.board[to_sq.i];
+        if (replaced) {
+            replaced.taken = true;
+        }
 
         this.board[to_sq.i] = piece;
         piece.square = to_sq;
+        piece.taken = false;
         return replaced;
     }
 
@@ -403,7 +411,7 @@ export default class Chess {
 
     setEventHandlers() {
         this.renderer.held_piece = undefined;
-        this.renderer.held_at = {x: 0, y: 0};
+        this.renderer.held_at = { x: 0, y: 0 };
 
         this.canvas.oncontextmenu = (ev: MouseEvent) => ev.preventDefault();
 

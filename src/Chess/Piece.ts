@@ -105,11 +105,13 @@ export class Piece {
     square: Square;
     color: Color;
     type: Type;
+    taken: boolean;
 
     constructor(square: string, color: Color, type: Type) {
         this.square = new Square(square);
         this.color = color;
         this.type = type;
+        this.taken = false;
     }
 
     isPseudoLegal(sq: Square): boolean {
