@@ -1,0 +1,40 @@
+body {
+  background-color: rgb(253, 243, 229);
+}
+
+#main {
+  font-family: 'SF Pro Text';
+  text-align: center;
+  padding-top: 5%;
+  padding-bottom: 5%;
+}
+
+#main:focus {
+  outline: none
+}
+
+#title-div {
+  padding-bottom: 3%;
+}
+
+#title-div > h1{
+  margin: 0%;
+}
+
+.div-container {
+  padding-left: 10%;
+  padding-right: 10%;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+}
+
+#canvas-div {
+  flex-basis: 70%;
+}
+
+#description-div {
+  text-align: left;
+  flex-basis: 30%;
+}
+/*# sourceMappingURL=index.8e0184e2.css.map */
